@@ -149,7 +149,6 @@ function update(state, dt) {
         state.zoneOscillationSpeed = diff.oscillationSpeed;
         state.zoneOscillationAmp = diff.oscillationAmp;
         state.pullsNeeded = calculatePullsNeeded(state.level);
-        state.pullsCompleted = 0;
         state.phase = 'spinning';
       }
       break;
