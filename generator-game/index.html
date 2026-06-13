@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Generator Mini-Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      background: #0a0a0a;
+      overflow: hidden;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    canvas {
+      display: block;
+      width: 100%; height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <script>
+    // ============================================================
+    // GAME LOGIC — Pure functions, testable in Node.js
+    // ============================================================
+
+    const DEFAULT_STATE = {
+      phase: 'idle',
+      level: 1,
+      score: 0,
+      pullsNeeded: 0,
+      pullsCompleted: 0,
+      needleAngle: 0,
+      needleSpeed: 2,
+      zoneStart: 0,
+      zoneWidth: Math.PI / 3,
+      zoneOscillationSpeed: 0,
+      zoneOscillationAmp: 0,
+      zoneOscillationPhase: 0,
+      particles: [],
+      shakeAmount: 0,
+      flashAlpha: 0,
+    };
+
+    function createInitialState() {
+      return { ...DEFAULT_STATE };
+    }
+
+    function randomPullsNeeded() {
+      return Math.random() < 0.5 ? 2 : 3;
+    }
+
+    function calculateDifficulty(level) {
+      const speed = 2 + (level - 1) * 0.5;
+      const zoneWidth = Math.max(Math.PI / 12, Math.PI / 3 - (level - 1) * (Math.PI / 3 - Math.PI / 12) / 10);
+      const hasOscillation = level >= 3;
+      const oscillationSpeed = hasOscillation ? 0.5 + (level - 3) * 0.3 : 0;
+      const oscillationAmp = hasOscillation ? Math.min(Math.PI / 6, (level - 3) * (Math.PI / 12) / 5) : 0;
+      return { speed, zoneWidth, oscillationSpeed, oscillationAmp, hasOscillation };
+    }
+
+    function updateNeedle(state, dt) {
+      state.needleAngle += state.needleSpeed * dt;
+      if (state.needleAngle >= Math.PI * 2) {
+        state.needleAngle -= Math.PI * 2;
+      }
+      return state;
+    }
+
+    function updateZone(state, dt) {
+      if (state.zoneOscillationSpeed > 0) {
+        state.zoneOscillationPhase += state.zoneOscillationSpeed * dt;
+        const baseZoneStart = Math.sin(state.zoneOscillationPhase) * state.zoneOscillationAmp;
+        state.zoneStart = baseZoneStart;
+      }
+      return state;
+    }
+
+    function isNeedleInZone(needleAngle, zoneStart, zoneWidth) {
+      const normalizedNeedle = ((needleAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      const normalizedZone = ((zoneStart % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      const zoneEnd = (normalizedZone + zoneWidth) % (Math.PI * 2);
+
+      if (zoneEnd > normalizedZone) {
+        return normalizedNeedle >= normalizedZone && normalizedNeedle <= zoneEnd;
+      } else {
+        return normalizedNeedle >= normalizedZone || normalizedNeedle <= zoneEnd;
+      }
+    }
+
+    function createSuccessParticles() {
+      const particles = [];
+      for (let i = 0; i < 30; i++) {
+        const angle = (Math.PI * 2 * i) / 30 + (Math.random() - 0.5) * 0.3;
+        const speed = 100 + Math.random() * 200;
+        particles.push({
+          x: 0, y: 0,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1,
+          decay: 0.5 + Math.random() * 0.5,
+          color: `hsl(${120 + Math.random() * 40}, 100%, ${50 + Math.random() * 30}%)`,
+        });
+      }
+      return particles;
+    }
+
+    function updateParticles(state, dt) {
+      state.particles = state.particles.filter(p => {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= p.decay * dt;
+        return p.life > 0;
+      });
+      return state;
+    }
+
+    function updateShake(state, dt) {
+      if (state.shakeAmount > 0) {
+        state.shakeAmount *= 0.9;
+        if (state.shakeAmount < 0.5) state.shakeAmount = 0;
+      }
+      if (state.flashAlpha > 0) {
+        state.flashAlpha -= dt * 2;
+        if (state.flashAlpha < 0) state.flashAlpha = 0;
+      }
+      return state;
+    }
+
+    function pull(state) {
+      if (state.phase !== 'spinning') return state;
+
+      const inZone = isNeedleInZone(state.needleAngle, state.zoneStart, state.zoneWidth);
+
+      if (inZone) {
+        state.pullsCompleted++;
+        if (state.pullsCompleted >= state.pullsNeeded) {
+          state.score++;
+          state.level++;
+          const diff = calculateDifficulty(state.level);
+          state.pullsNeeded = randomPullsNeeded();
+          state.pullsCompleted = 0;
+          state.needleSpeed = diff.speed;
+          state.zoneWidth = diff.zoneWidth;
+          state.zoneOscillationSpeed = diff.oscillationSpeed;
+          state.zoneOscillationAmp = diff.oscillationAmp;
+          state.phase = 'success';
+          state.particles = createSuccessParticles();
+        } else {
+          state.phase = 'success';
+          state.particles = createSuccessParticles();
+        }
+      } else {
+        state.phase = 'failure';
+        state.shakeAmount = 15;
+        state.flashAlpha = 1;
+      }
+      return state;
+    }
+
+    function update(state, dt) {
+      switch (state.phase) {
+        case 'spinning':
+          updateNeedle(state, dt);
+          updateZone(state, dt);
+          break;
+        case 'success':
+          updateParticles(state, dt);
+          if (state.particles.length === 0) {
+            const diff = calculateDifficulty(state.level);
+            state.needleSpeed = diff.speed;
+            state.zoneWidth = diff.zoneWidth;
+            state.zoneOscillationSpeed = diff.oscillationSpeed;
+            state.zoneOscillationAmp = diff.oscillationAmp;
+            state.pullsNeeded = randomPullsNeeded();
+            state.pullsCompleted = 0;
+            state.phase = 'spinning';
+          }
+          break;
+        case 'failure':
+          updateShake(state, dt);
+          break;
+      }
+      return state;
+    }
+
+    function resetGame() {
+      const state = createInitialState();
+      const diff = calculateDifficulty(state.level);
+      state.needleSpeed = diff.speed;
+      state.zoneWidth = diff.zoneWidth;
+      state.zoneOscillationSpeed = diff.oscillationSpeed;
+      state.zoneOscillationAmp = diff.oscillationAmp;
+      state.pullsNeeded = randomPullsNeeded();
+      state.pullsCompleted = 0;
+      state.phase = 'spinning';
+      return state;
+    }
+
+    // ============================================================
+    // RENDERER — Canvas drawing, browser only
+    // ============================================================
+
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    let dpr = window.devicePixelRatio || 1;
+    let centerX, centerY, radius;
+
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      centerX = canvas.width / 2;
+      centerY = canvas.height / 2;
+      radius = Math.min(centerX, centerY) * 0.6;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    function drawDial(cx, cy, r) {
+      // Outer ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 3 * dpr;
+      ctx.stroke();
+
+      // Inner decorative ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.7, 0, Math.PI * 2);
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth = 1 * dpr;
+      ctx.stroke();
+
+      // Cross lines
+      for (let i = 0; i < 4; i++) {
+        const angle = (Math.PI / 2) * i;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(angle) * r * 0.3, cy + Math.sin(angle) * r * 0.3);
+        ctx.lineTo(cx + Math.cos(angle) * r * 0.95, cy + Math.sin(angle) * r * 0.95);
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 1 * dpr;
+        ctx.stroke();
+      }
+
+      // Tick marks
+      for (let i = 0; i < 60; i++) {
+        const angle = (Math.PI * 2 * i) / 60 - Math.PI / 2;
+        const isMajor = i % 5 === 0;
+        const innerR = isMajor ? r - 15 * dpr : r - 8 * dpr;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(angle) * innerR, cy + Math.sin(angle) * innerR);
+        ctx.lineTo(cx + Math.cos(angle) * (r - 3 * dpr), cy + Math.sin(angle) * (r - 3 * dpr));
+        ctx.strokeStyle = isMajor ? '#555' : '#333';
+        ctx.lineWidth = (isMajor ? 2 : 1) * dpr;
+        ctx.stroke();
+      }
+    }
+
+    function drawZone(cx, cy, r, zoneStart, zoneWidth) {
+      const startAngle = zoneStart - Math.PI / 2;
+      const endAngle = startAngle + zoneWidth;
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startAngle, endAngle);
+      ctx.strokeStyle = '#00ff44';
+      ctx.lineWidth = 12 * dpr;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = '#00ff44';
+      ctx.shadowBlur = 20 * dpr;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    function drawNeedle(cx, cy, r, angle, zoneStart, zoneWidth) {
+      const needleAngle = angle - Math.PI / 2;
+      const tipX = cx + Math.cos(needleAngle) * (r - 5 * dpr);
+      const tipY = cy + Math.sin(needleAngle) * (r - 5 * dpr);
+
+      const inZone = isNeedleInZone(angle, zoneStart, zoneWidth);
+      const needleColor = inZone ? '#00ff44' : '#ffffff';
+      const glowColor = inZone ? '#00ff44' : 'transparent';
+
+      // Needle line
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(tipX, tipY);
+      ctx.strokeStyle = needleColor;
+      ctx.lineWidth = 3 * dpr;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = inZone ? 15 * dpr : 0;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6 * dpr, 0, Math.PI * 2);
+      ctx.fillStyle = needleColor;
+      ctx.fill();
+
+      // Tip dot
+      ctx.beginPath();
+      ctx.arc(tipX, tipY, 5 * dpr, 0, Math.PI * 2);
+      ctx.fillStyle = needleColor;
+      ctx.fill();
+    }
+
+    function drawParticles(cx, cy, particles) {
+      for (const p of particles) {
+        const px = cx + p.x;
+        const py = cy + p.y;
+        ctx.beginPath();
+        ctx.arc(px, py, 4 * dpr * p.life, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawHUD(state) {
+      const fontSize = Math.max(16, radius * 0.08);
+      ctx.font = `${fontSize}px monospace`;
+      ctx.fillStyle = '#888';
+      ctx.textAlign = 'left';
+
+      ctx.fillText(`SCORE: ${state.score}`, 20 * dpr, 30 * dpr + fontSize);
+      ctx.fillText(`LEVEL: ${state.level}`, 20 * dpr, 30 * dpr + fontSize * 2);
+
+      const pullsRemaining = state.pullsNeeded - state.pullsCompleted;
+      ctx.fillText(`PULLS: ${pullsRemaining}`, 20 * dpr, 30 * dpr + fontSize * 3);
+    }
+
+    function drawGameOver(state) {
+      // Dark overlay
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const fontSize = Math.max(24, radius * 0.12);
+      ctx.font = `bold ${fontSize}px monospace`;
+      ctx.fillStyle = '#ff4444';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', centerX, centerY - fontSize * 2);
+
+      ctx.font = `${fontSize * 0.7}px monospace`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(`Score: ${state.score}`, centerX, centerY + fontSize * 0.5);
+      ctx.fillText(`Level: ${state.level}`, centerX, centerY + fontSize * 1.3);
+
+      ctx.font = `${fontSize * 0.5}px monospace`;
+      ctx.fillStyle = '#888';
+      ctx.fillText('Tap or press Space to restart', centerX, centerY + fontSize * 2.5);
+    }
+
+    function render(state) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Apply shake
+      let offsetX = 0, offsetY = 0;
+      if (state.shakeAmount > 0) {
+        offsetX = (Math.random() - 0.5) * state.shakeAmount * dpr;
+        offsetY = (Math.random() - 0.5) * state.shakeAmount * dpr;
+      }
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+
+      // Draw dial
+      drawDial(centerX, centerY, radius);
+
+      // Draw zone
+      drawZone(centerX, centerY, radius, state.zoneStart, state.zoneWidth);
+
+      // Draw needle
+      drawNeedle(centerX, centerY, radius, state.needleAngle, state.zoneStart, state.zoneWidth);
+
+      // Draw particles
+      if (state.particles.length > 0) {
+        drawParticles(centerX, centerY, state.particles);
+      }
+
+      // Draw HUD
+      drawHUD(state);
+
+      ctx.restore();
+
+      // Red flash on failure
+      if (state.flashAlpha > 0) {
+        ctx.fillStyle = `rgba(255, 0, 0, ${state.flashAlpha * 0.3})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Game over screen
+      if (state.phase === 'failure') {
+        drawGameOver(state);
+      }
+    }
+
+    // ============================================================
+    // INPUT HANDLING
+    // ============================================================
+
+    function handleInput() {
+      if (gameState.phase === 'failure') {
+        gameState = resetGame();
+        return;
+      }
+      gameState = pull(gameState);
+    }
+
+    // Keyboard
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        handleInput();
+      }
+    });
+
+    // Touch / Click
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleInput();
+    }, { passive: false });
+
+    canvas.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      handleInput();
+    });
+
+    // ============================================================
+    // GAME LOOP
+    // ============================================================
+
+    let gameState = resetGame();
+    let lastTime = 0;
+
+    function gameLoop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.1); // Cap at 100ms
+      lastTime = timestamp;
+
+      gameState = update(gameState, dt);
+      render(gameState);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
