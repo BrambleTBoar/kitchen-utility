@@ -405,6 +405,8 @@
     // INPUT HANDLING
     // ============================================================
 
+    let touchActive = false;
+
     function handleInput() {
       if (gameState.phase === 'failure') {
         gameState = resetGame();
@@ -424,12 +426,18 @@
     // Touch / Click
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
+      touchActive = true;
       handleInput();
     }, { passive: false });
 
     canvas.addEventListener('mousedown', (e) => {
+      if (touchActive) return; // Prevent double-fire on touch devices
       e.preventDefault();
       handleInput();
+    });
+
+    canvas.addEventListener('touchend', () => {
+      touchActive = false;
     });
 
     // ============================================================
