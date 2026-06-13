@@ -2,7 +2,7 @@
 
 const {
   createInitialState,
-  randomPullsNeeded,
+  calculatePullsNeeded,
   calculateDifficulty,
   updateNeedle,
   updateZone,
@@ -40,11 +40,13 @@ assert(state.score === 0, 'Initial score should be 0');
 assert(state.needleAngle === 0, 'Initial needle angle should be 0');
 assert(state.needleSpeed === 2, 'Initial needle speed should be 2');
 
-// --- Test: randomPullsNeeded returns 2 or 3 ---
-for (let i = 0; i < 100; i++) {
-  const n = randomPullsNeeded();
-  assert(n === 2 || n === 3, `randomPullsNeeded should return 2 or 3, got ${n}`);
-}
+// --- Test: calculatePullsNeeded returns increasing values ---
+assert(calculatePullsNeeded(1) === 2, 'Level 1 should need 2 pulls');
+assert(calculatePullsNeeded(2) === 2, 'Level 2 should need 2 pulls');
+assert(calculatePullsNeeded(3) === 3, 'Level 3 should need 3 pulls');
+assert(calculatePullsNeeded(4) === 3, 'Level 4 should need 3 pulls');
+assert(calculatePullsNeeded(5) === 4, 'Level 5 should need 4 pulls');
+assert(calculatePullsNeeded(10) === 5, 'Level 10+ should cap at 5 pulls');
 
 // --- Test: calculateDifficulty ---
 const diff1 = calculateDifficulty(1);

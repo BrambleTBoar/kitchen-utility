@@ -22,13 +22,13 @@ function createInitialState() {
   return { ...DEFAULT_STATE };
 }
 
-function randomPullsNeeded() {
-  return Math.random() < 0.5 ? 2 : 3;
+function calculatePullsNeeded(level) {
+  return Math.min(5, 2 + Math.floor((level - 1) / 2));
 }
 
 function calculateDifficulty(level) {
   const speed = 2 + (level - 1) * 0.5;
-  const zoneWidth = Math.max(Math.PI / 12, Math.PI / 3 - (level - 1) * (Math.PI / 3 - Math.PI / 12) / 9);
+  const zoneWidth = Math.max(Math.PI / 12, Math.PI / 3 - (level - 1) * (Math.PI / 3 - Math.PI / 12) / 4);
   const hasOscillation = level >= 3;
   const oscillationSpeed = hasOscillation ? 0.5 + (level - 3) * 0.3 : 0;
   const oscillationAmp = hasOscillation ? Math.min(Math.PI / 6, (level - 3) * (Math.PI / 12) / 5) : 0;
@@ -114,7 +114,7 @@ function pull(state) {
       state.score++;
       state.level++;
       const diff = calculateDifficulty(state.level);
-      state.pullsNeeded = randomPullsNeeded();
+      state.pullsNeeded = calculatePullsNeeded(state.level);
       state.pullsCompleted = 0;
       state.needleSpeed = diff.speed;
       state.zoneWidth = diff.zoneWidth;
@@ -148,7 +148,7 @@ function update(state, dt) {
         state.zoneWidth = diff.zoneWidth;
         state.zoneOscillationSpeed = diff.oscillationSpeed;
         state.zoneOscillationAmp = diff.oscillationAmp;
-        state.pullsNeeded = randomPullsNeeded();
+        state.pullsNeeded = calculatePullsNeeded(state.level);
         state.pullsCompleted = 0;
         state.phase = 'spinning';
       }
@@ -167,7 +167,7 @@ function resetGame() {
   state.zoneWidth = diff.zoneWidth;
   state.zoneOscillationSpeed = diff.oscillationSpeed;
   state.zoneOscillationAmp = diff.oscillationAmp;
-  state.pullsNeeded = randomPullsNeeded();
+  state.pullsNeeded = calculatePullsNeeded(state.level);
   state.pullsCompleted = 0;
   state.phase = 'spinning';
   return state;
@@ -175,7 +175,7 @@ function resetGame() {
 
 module.exports = {
   createInitialState,
-  randomPullsNeeded,
+  calculatePullsNeeded,
   calculateDifficulty,
   updateNeedle,
   updateZone,
