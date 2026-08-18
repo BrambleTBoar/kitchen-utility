@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Utility</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Kitchen Utility</h1>
+    </header>
+    <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="dough" role="tab" aria-selected="true">Dough</button>
+        <button class="tab" data-tab="scaler" role="tab" aria-selected="false">Scaler</button>
+        <button class="tab" data-tab="timer" role="tab" aria-selected="false">Timer</button>
+        <button class="tab" data-tab="converter" role="tab" aria-selected="false">Converter</button>
+        <button class="tab" data-tab="substitutions" role="tab" aria-selected="false">Substitutions</button>
+    </nav>
+    <main>
+        <section id="dough" class="tool-panel active" role="tabpanel">
+            <h2>Dough Calculator</h2>
+            <div class="input-group">
+                <label for="flour">Flour (g)</label>
+                <input type="number" id="flour" value="500" min="1">
+            </div>
+            <div class="input-group">
+                <label for="hydration">Hydration (%)</label>
+                <input type="number" id="hydration" value="65" min="0" max="100" step="0.1">
+            </div>
+            <div class="input-group">
+                <label for="salt">Salt (%)</label>
+                <input type="number" id="salt" value="2" min="0" max="5" step="0.1">
+            </div>
+            <div class="input-group">
+                <label for="starter">Starter (%)</label>
+                <input type="number" id="starter" value="0" min="0" max="100" step="0.1">
+            </div>
+            <div id="dough-results" class="results"></div>
+        </section>
+        <section id="scaler" class="tool-panel" role="tabpanel" hidden>
+            <h2>Recipe Scaler</h2>
+            <div class="input-group">
+                <label for="servings-current">Current servings</label>
+                <input type="number" id="servings-current" value="4" min="1">
+            </div>
+            <div class="input-group">
+                <label for="servings-target">Target servings</label>
+                <input type="number" id="servings-target" value="2" min="1">
+            </div>
+            <div id="recipe-inputs" class="recipe-inputs"></div>
+            <button id="add-ingredient" class="btn">+ Add Ingredient</button>
+            <div id="scaled-results" class="results"></div>
+        </section>
+        <section id="timer" class="tool-panel" role="tabpanel" hidden>
+            <h2>Cooking Timer</h2>
+            <div id="timer-list" class="timer-list"></div>
+            <button id="add-timer" class="btn">+ Add Timer</button>
+        </section>
+        <section id="converter" class="tool-panel" role="tabpanel" hidden>
+            <h2>Unit Converter</h2>
+            <div class="converter-type-tabs">
+                <button class="converter-tab active" data-type="temperature">Temperature</button>
+                <button class="converter-tab" data-type="volume">Volume</button>
+                <button class="converter-tab" data-type="weight">Weight</button>
+            </div>
+            <div class="input-group">
+                <label for="converter-value">Value</label>
+                <input type="number" id="converter-value" value="200" step="0.1">
+            </div>
+            <div class="input-group">
+                <label for="converter-from">From</label>
+                <select id="converter-from"></select>
+            </div>
+            <div class="input-group">
+                <label for="converter-to">To</label>
+                <select id="converter-to"></select>
+            </div>
+            <div id="converter-results" class="results"></div>
+        </section>
+        <section id="substitutions" class="tool-panel" role="tabpanel" hidden>
+            <h2>Substitution Finder</h2>
+            <div class="input-group">
+                <label for="sub-search">Search ingredient</label>
+                <input type="text" id="sub-search" placeholder="e.g., butter, eggs, milk">
+            </div>
+            <div id="sub-results" class="results"></div>
+        </section>
+    </main>
+    <script src="js/dough.js"></script>
+    <script src="js/scaler.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/converter.js"></script>
+    <script src="js/substitutions.json"></script>
+    <script src="js/substitutions.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
