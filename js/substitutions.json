@@ -1,56 +1,597 @@
 {
-    "butter": [
-        { "substitute": "coconut oil", "ratio": "1:1", "notes": "Solid at room temp, works in baking" },
-        { "substitute": "applesauce", "ratio": "1:1 (half butter, half applesauce)", "notes": "Lower fat, lighter texture" },
-        { "substitute": "margarine", "ratio": "1:1", "notes": "Closest match, may affect browning" },
-        { "substitute": "vegetable oil", "ratio": "3/4 cup per 1 cup butter", "notes": "Liquid, adjust other liquids" }
-    ],
-    "eggs": [
-        { "substitute": "mashed banana", "ratio": "1 egg = 1/4 banana", "notes": "Adds sweetness, best in baking" },
-        { "substitute": "applesauce", "ratio": "1 egg = 1/4 cup", "notes": "Adds moisture, lighter texture" },
-        { "substitute": "flax egg", "ratio": "1 egg = 1 tbsp ground flax + 3 tbsp water", "notes": "Let sit 5 minutes, neutral flavor" },
-        { "substitute": "silken tofu", "ratio": "1 egg = 1/4 cup blended", "notes": "Neutral flavor, good for dense baked goods" },
-        { "substitute": "yogurt", "ratio": "1 egg = 1/4 cup", "notes": "Adds tang, works in cakes" }
-    ],
-    "milk": [
-        { "substitute": "oat milk", "ratio": "1:1", "notes": "Creamy, neutral flavor" },
-        { "substitute": "almond milk", "ratio": "1:1", "notes": "Lighter, slightly nutty" },
-        { "substitute": "soy milk", "ratio": "1:1", "notes": "Closest protein content to dairy" },
-        { "substitute": "water + butter", "ratio": "1 cup water + 1 tbsp butter", "notes": "For baking, adds fat back" },
-        { "substitute": "coconut milk (canned)", "ratio": "1:1", "notes": "Very rich, coconut flavor" }
-    ],
-    "heavy cream": [
-        { "substitute": "milk + butter", "ratio": "3/4 cup milk + 1/4 cup melted butter", "notes": "Good for cooking, not whipping" },
-        { "substitute": "cashew cream", "ratio": "1:1", "notes": "Blend soaked cashews with water" },
-        { "substitute": "evaporated milk", "ratio": "1:1", "notes": "Lighter, won't whip" }
-    ],
-    "all-purpose flour": [
-        { "substitute": "almond flour", "ratio": "1:1", "notes": "Denser, nutty flavor, gluten-free" },
-        { "substitute": "oat flour", "ratio": "1:1", "notes": "Denser, slightly sweet" },
-        { "substitute": "coconut flour", "ratio": "1/3 cup per 1 cup AP", "notes": "Very absorbent, add extra liquid" }
-    ],
-    "sugar": [
-        { "substitute": "honey", "ratio": "3/4 cup per 1 cup sugar", "notes": "Reduce other liquids by 1/4 cup" },
-        { "substitute": "maple syrup", "ratio": "3/4 cup per 1 cup sugar", "notes": "Distinct flavor, reduce liquids" },
-        { "substitute": "coconut sugar", "ratio": "1:1", "notes": "Similar flavor, darker color" },
-        { "substitute": "stevia", "ratio": "1 tsp per 1 cup sugar", "notes": "Much sweeter, no volume replacement" }
-    ],
-    "sour cream": [
-        { "substitute": "Greek yogurt", "ratio": "1:1", "notes": "Closest match, slightly tangier" },
-        { "substitute": "cottage cheese (blended)", "ratio": "1:1", "notes": "Smooth when blended" },
-        { "substitute": "buttermilk", "ratio": "slightly less", "notes": "Thinner, more liquid" }
-    ],
-    "buttermilk": [
-        { "substitute": "milk + lemon juice/vinegar", "ratio": "1 cup milk + 1 tbsp acid, sit 5 min", "notes": "Works in baking" },
-        { "substitute": "yogurt + water", "ratio": "3/4 cup yogurt + 1/4 cup water", "notes": "Thick, may need thinning" }
-    ],
-    "cream cheese": [
-        { "substitute": "tofu (blended)", "ratio": "1:1", "notes": "Neutral flavor when blended" },
-        { "substitute": "cashew cream", "ratio": "1:1", "notes": "Soak cashews, blend smooth" }
-    ],
-    "wine": [
-        { "substitute": "grape juice + vinegar", "ratio": "3/4 cup juice + 1/4 cup vinegar", "notes": "For cooking, adds acidity" },
-        { "substitute": "broth + vinegar", "ratio": "1:1", "notes": "For savory dishes" },
-        { "substitute": "water + lemon juice", "ratio": "1:1", "notes": "Minimal flavor impact" }
-    ]
+  "all-purpose flour": [
+    {
+      "substitute": "bread flour",
+      "ratio": "1:1 by weight",
+      "notes": "Higher protein; may make baked goods chewier."
+    },
+    {
+      "substitute": "measure-for-measure gluten-free flour",
+      "ratio": "1:1 by weight",
+      "notes": "Use a blend designed as a direct flour replacement."
+    }
+  ],
+
+  "baking powder": [
+    {
+      "substitute": "baking soda + cream of tartar",
+      "ratio": "1/4 tsp baking soda + 1/2 tsp cream of tartar per 1 tsp baking powder",
+      "notes": "Use immediately after mixing."
+    }
+  ],
+
+  "baking soda": [
+    {
+      "substitute": "baking powder",
+      "ratio": "3 tsp baking powder per 1 tsp baking soda",
+      "notes": "Results may differ because baking powder contains its own acid."
+    }
+  ],
+
+  "bread crumbs": [
+    {
+      "substitute": "cracker crumbs",
+      "ratio": "3/4 cup cracker crumbs per 1 cup dry breadcrumbs",
+      "notes": "Good for coatings, meatloaf, and fillers."
+    },
+    {
+      "substitute": "crushed cornflakes",
+      "ratio": "1:1",
+      "notes": "Works well for crispy coatings."
+    },
+    {
+      "substitute": "rolled oats",
+      "ratio": "1:1",
+      "notes": "Best for meatloaf or meatballs rather than breading."
+    }
+  ],
+
+  "brown sugar": [
+    {
+      "substitute": "granulated sugar + molasses",
+      "ratio": "1 cup sugar + 1/4 cup molasses per 1 cup packed brown sugar",
+      "notes": "Mix thoroughly before using."
+    },
+    {
+      "substitute": "granulated sugar",
+      "ratio": "1:1",
+      "notes": "Less moisture and caramel flavor; texture may be crisper."
+    }
+  ],
+
+  "butter": [
+    {
+      "substitute": "margarine",
+      "ratio": "1:1",
+      "notes": "Stick margarine generally performs better than spreadable tubs in baking."
+    },
+    {
+      "substitute": "vegetable oil",
+      "ratio": "7/8 cup oil per 1 cup butter",
+      "notes": "Works in many recipes but removes butter flavor and changes texture."
+    },
+    {
+      "substitute": "coconut oil",
+      "ratio": "approximately 1:1",
+      "notes": "Refined coconut oil has less coconut flavor."
+    },
+    {
+      "substitute": "applesauce",
+      "ratio": "replace up to half of the butter 1:1",
+      "notes": "Useful for reducing fat in some cakes and quick breads; produces a softer texture."
+    }
+  ],
+
+  "buttermilk": [
+    {
+      "substitute": "milk + lemon juice",
+      "ratio": "1 tbsp lemon juice plus enough milk to make 1 cup",
+      "notes": "Let stand 5-10 minutes before using."
+    },
+    {
+      "substitute": "milk + white vinegar",
+      "ratio": "1 tbsp vinegar plus enough milk to make 1 cup",
+      "notes": "Let stand 5-10 minutes before using."
+    },
+    {
+      "substitute": "plain yogurt + milk",
+      "ratio": "about 3/4 cup yogurt + 1/4 cup milk",
+      "notes": "Adjust milk slightly to reach a buttermilk-like consistency."
+    }
+  ],
+
+  "cake flour": [
+    {
+      "substitute": "all-purpose flour + cornstarch",
+      "ratio": "3/4 cup + 2 tbsp AP flour + 2 tbsp cornstarch per 1 cup cake flour",
+      "notes": "Whisk or sift thoroughly."
+    }
+  ],
+
+  "cornstarch": [
+    {
+      "substitute": "all-purpose flour",
+      "ratio": "2 tbsp flour per 1 tbsp cornstarch",
+      "notes": "Good for thickening sauces; may produce a less glossy result."
+    },
+    {
+      "substitute": "arrowroot starch",
+      "ratio": "about 2 tsp arrowroot per 1 tbsp cornstarch",
+      "notes": "Good for clear sauces; avoid prolonged high heat."
+    }
+  ],
+
+  "cream of tartar": [
+    {
+      "substitute": "lemon juice",
+      "ratio": "about 3 times the volume",
+      "notes": "Useful for stabilizing whipped egg whites."
+    },
+    {
+      "substitute": "white vinegar",
+      "ratio": "about 3 times the volume",
+      "notes": "Useful where acidity is the main function."
+    }
+  ],
+
+  "egg": [
+    {
+      "substitute": "ground flaxseed + water",
+      "ratio": "1 tbsp ground flax + 3 tbsp water per egg",
+      "notes": "Let sit about 5 minutes. Good for binding in muffins, cookies, and quick breads."
+    },
+    {
+      "substitute": "chia seeds + water",
+      "ratio": "1 tbsp chia + 3 tbsp water per egg",
+      "notes": "Let gel 5-10 minutes. Adds visible seeds unless ground."
+    },
+    {
+      "substitute": "applesauce",
+      "ratio": "1/4 cup per egg",
+      "notes": "Adds moisture; best for cakes, muffins, and quick breads."
+    },
+    {
+      "substitute": "mashed banana",
+      "ratio": "1/4 cup per egg",
+      "notes": "Adds sweetness and banana flavor."
+    },
+    {
+      "substitute": "plain yogurt",
+      "ratio": "1/4 cup per egg",
+      "notes": "Adds moisture and richness; best where egg is not needed primarily for lift."
+    }
+  ],
+
+  "heavy cream": [
+    {
+      "substitute": "milk + melted butter",
+      "ratio": "3/4 cup milk + about 1/3 cup melted butter per 1 cup cream",
+      "notes": "Works for cooking and baking but will not whip like heavy cream."
+    },
+    {
+      "substitute": "evaporated milk",
+      "ratio": "1:1",
+      "notes": "Good for soups and sauces; lower fat and not suitable for whipping."
+    },
+    {
+      "substitute": "coconut cream",
+      "ratio": "1:1",
+      "notes": "Rich non-dairy substitute but may add coconut flavor."
+    }
+  ],
+
+  "half-and-half": [
+    {
+      "substitute": "whole milk + heavy cream",
+      "ratio": "3/4 cup whole milk + 1/4 cup heavy cream per 1 cup",
+      "notes": "Close approximation for cooking and coffee."
+    }
+  ],
+
+  "honey": [
+    {
+      "substitute": "maple syrup",
+      "ratio": "1:1",
+      "notes": "Flavor and moisture will differ slightly."
+    },
+    {
+      "substitute": "granulated sugar + liquid",
+      "ratio": "1 1/4 cups sugar + 1/4 cup liquid per 1 cup honey",
+      "notes": "Less honey flavor and may require other recipe adjustments."
+    }
+  ],
+
+  "maple syrup": [
+    {
+      "substitute": "honey",
+      "ratio": "1:1",
+      "notes": "Similar sweetness and consistency but distinctly different flavor."
+    },
+    {
+      "substitute": "molasses",
+      "ratio": "use somewhat less than 1:1",
+      "notes": "Much stronger flavor, particularly with blackstrap molasses."
+    }
+  ],
+
+  "milk": [
+    {
+      "substitute": "evaporated milk + water",
+      "ratio": "1/2 cup evaporated milk + 1/2 cup water per 1 cup milk",
+      "notes": "Useful in cooking and baking."
+    },
+    {
+      "substitute": "oat milk",
+      "ratio": "1:1",
+      "notes": "Neutral and creamy; good general-purpose non-dairy substitute."
+    },
+    {
+      "substitute": "soy milk",
+      "ratio": "1:1",
+      "notes": "Protein content makes it useful in baking."
+    },
+    {
+      "substitute": "almond milk",
+      "ratio": "1:1",
+      "notes": "Thinner than dairy milk and may add a mild nutty flavor."
+    }
+  ],
+
+  "molasses": [
+    {
+      "substitute": "dark corn syrup",
+      "ratio": "1:1",
+      "notes": "Texture is similar but flavor is milder."
+    },
+    {
+      "substitute": "maple syrup",
+      "ratio": "1:1",
+      "notes": "Sweeter and much lighter in flavor."
+    }
+  ],
+
+  "powdered sugar": [
+    {
+      "substitute": "granulated sugar + cornstarch",
+      "ratio": "1 cup sugar + 1 tbsp cornstarch",
+      "notes": "Blend until very fine and powdery."
+    }
+  ],
+
+  "self-rising flour": [
+    {
+      "substitute": "all-purpose flour + baking powder + salt",
+      "ratio": "1 cup minus 2 tsp AP flour + 1 1/2 tsp baking powder + 1/2 tsp salt",
+      "notes": "Whisk very thoroughly before using."
+    }
+  ],
+
+  "sour cream": [
+    {
+      "substitute": "plain Greek yogurt",
+      "ratio": "1:1",
+      "notes": "One of the closest replacements for dips, baking, and toppings."
+    },
+    {
+      "substitute": "plain yogurt",
+      "ratio": "1:1",
+      "notes": "Thinner than sour cream but generally works well in baking."
+    },
+    {
+      "substitute": "cottage cheese blended smooth",
+      "ratio": "1:1",
+      "notes": "Best in savory applications or baked dishes."
+    }
+  ],
+
+  "vegetable oil": [
+    {
+      "substitute": "canola oil",
+      "ratio": "1:1",
+      "notes": "Neutral flavor and very similar behavior."
+    },
+    {
+      "substitute": "sunflower oil",
+      "ratio": "1:1",
+      "notes": "Neutral oil suitable for most cooking and baking."
+    },
+    {
+      "substitute": "melted coconut oil",
+      "ratio": "1:1",
+      "notes": "May firm when chilled and may contribute coconut flavor."
+    },
+    {
+      "substitute": "applesauce",
+      "ratio": "replace up to half 1:1",
+      "notes": "Useful in muffins and quick breads when reducing fat."
+    }
+  ],
+
+  "olive oil": [
+    {
+      "substitute": "avocado oil",
+      "ratio": "1:1",
+      "notes": "Neutral flavor and suitable for higher-heat cooking."
+    },
+    {
+      "substitute": "canola oil",
+      "ratio": "1:1",
+      "notes": "Much more neutral flavor."
+    }
+  ],
+
+  "white wine": [
+    {
+      "substitute": "white grape juice",
+      "ratio": "1:1",
+      "notes": "Sweeter; add a small splash of vinegar or lemon juice for acidity if appropriate."
+    },
+    {
+      "substitute": "chicken or vegetable broth",
+      "ratio": "1:1",
+      "notes": "Useful in savory dishes where wine is primarily providing liquid."
+    }
+  ],
+
+  "red wine": [
+    {
+      "substitute": "red or purple grape juice",
+      "ratio": "1:1",
+      "notes": "Sweeter; add a small amount of vinegar if acidity is needed."
+    },
+    {
+      "substitute": "beef broth",
+      "ratio": "1:1",
+      "notes": "Useful in savory dishes and braises; lacks wine acidity."
+    }
+  ],
+
+  "rice vinegar": [
+    {
+      "substitute": "apple cider vinegar",
+      "ratio": "1:1",
+      "notes": "Stronger flavor; a small pinch of sugar can make it closer to seasoned rice vinegar."
+    },
+    {
+      "substitute": "white wine vinegar",
+      "ratio": "1:1",
+      "notes": "Similar acidity with a slightly sharper taste."
+    }
+  ],
+
+  "apple cider vinegar": [
+    {
+      "substitute": "white wine vinegar",
+      "ratio": "1:1",
+      "notes": "Less fruity but similar acidity."
+    },
+    {
+      "substitute": "lemon juice",
+      "ratio": "1:1",
+      "notes": "Good when acidity is more important than vinegar flavor."
+    }
+  ],
+
+  "lemon juice": [
+    {
+      "substitute": "lime juice",
+      "ratio": "1:1",
+      "notes": "Excellent general substitute with a different citrus flavor."
+    },
+    {
+      "substitute": "vinegar",
+      "ratio": "about 1/2 tsp vinegar per 1 tsp lemon juice",
+      "notes": "Best where lemon juice is being used mainly for acidity."
+    }
+  ],
+
+  "lime juice": [
+    {
+      "substitute": "lemon juice",
+      "ratio": "1:1",
+      "notes": "Acidity is similar but flavor is distinctly different."
+    }
+  ],
+
+  "soy sauce": [
+    {
+      "substitute": "tamari",
+      "ratio": "1:1",
+      "notes": "Usually similar flavor and often gluten-free, but check the label."
+    },
+    {
+      "substitute": "coconut aminos",
+      "ratio": "1:1",
+      "notes": "Sweeter and generally less salty than soy sauce."
+    }
+  ],
+
+  "worcestershire sauce": [
+    {
+      "substitute": "soy sauce + lemon juice",
+      "ratio": "roughly equal parts",
+      "notes": "Approximation for savory dishes; lacks the full spice and fermented flavor."
+    }
+  ],
+
+  "dijon mustard": [
+    {
+      "substitute": "yellow mustard",
+      "ratio": "1:1",
+      "notes": "Milder and less complex."
+    },
+    {
+      "substitute": "stone-ground mustard",
+      "ratio": "1:1",
+      "notes": "Similar flavor with a coarser texture."
+    }
+  ],
+
+  "tomato paste": [
+    {
+      "substitute": "tomato sauce",
+      "ratio": "3 tbsp tomato sauce per 1 tbsp tomato paste",
+      "notes": "Simmer or reduce when possible to remove excess water."
+    },
+    {
+      "substitute": "ketchup",
+      "ratio": "roughly 1:1",
+      "notes": "Sweeter and seasoned; best only when the flavor fits the dish."
+    }
+  ],
+
+  "tomato sauce": [
+    {
+      "substitute": "tomato paste + water",
+      "ratio": "1 part tomato paste + 1 part water",
+      "notes": "Adjust thickness and seasoning as needed."
+    },
+    {
+      "substitute": "crushed tomatoes",
+      "ratio": "1:1",
+      "notes": "Chunkier texture; blend for a smoother sauce."
+    }
+  ],
+
+  "chicken broth": [
+    {
+      "substitute": "chicken bouillon + water",
+      "ratio": "1 bouillon cube or equivalent base per 1 cup hot water",
+      "notes": "Salt level varies greatly by brand."
+    },
+    {
+      "substitute": "vegetable broth",
+      "ratio": "1:1",
+      "notes": "Good general substitute with a lighter flavor."
+    }
+  ],
+
+  "beef broth": [
+    {
+      "substitute": "beef bouillon + water",
+      "ratio": "1 bouillon cube or equivalent base per 1 cup hot water",
+      "notes": "Check salt before seasoning the finished dish."
+    },
+    {
+      "substitute": "mushroom broth",
+      "ratio": "1:1",
+      "notes": "Adds savory depth and works particularly well in stews and sauces."
+    }
+  ],
+
+  "vegetable broth": [
+    {
+      "substitute": "water + bouillon",
+      "ratio": "prepare according to bouillon package directions",
+      "notes": "Salt levels vary."
+    },
+    {
+      "substitute": "chicken broth",
+      "ratio": "1:1",
+      "notes": "Use only when a vegetarian result is not required."
+    }
+  ],
+
+  "garlic": [
+    {
+      "substitute": "garlic powder",
+      "ratio": "about 1/8 tsp garlic powder per small garlic clove",
+      "notes": "Powder is more concentrated and lacks fresh garlic texture."
+    },
+    {
+      "substitute": "jarred minced garlic",
+      "ratio": "about 1/2 tsp per clove",
+      "notes": "Convenient but usually milder than freshly chopped garlic."
+    }
+  ],
+
+  "fresh ginger": [
+    {
+      "substitute": "ground ginger",
+      "ratio": "about 1/4 tsp ground ginger per 1 tbsp fresh ginger",
+      "notes": "Ground ginger is warmer and less bright than fresh."
+    }
+  ],
+
+  "fresh herbs": [
+    {
+      "substitute": "dried herbs",
+      "ratio": "1 tsp dried herbs per 1 tbsp chopped fresh herbs",
+      "notes": "Add dried herbs earlier in cooking so they have time to hydrate."
+    }
+  ],
+
+  "fresh basil": [
+    {
+      "substitute": "dried basil",
+      "ratio": "1 tsp dried per 1 tbsp fresh",
+      "notes": "Dried basil is less fresh-tasting; add during cooking rather than at the end."
+    }
+  ],
+
+  "fresh oregano": [
+    {
+      "substitute": "dried oregano",
+      "ratio": "1 tsp dried per 1 tbsp fresh",
+      "notes": "Dried oregano is often stronger than fresh."
+    }
+  ],
+
+  "fresh thyme": [
+    {
+      "substitute": "dried thyme",
+      "ratio": "1 tsp dried per 1 tbsp fresh",
+      "notes": "Add earlier during cooking."
+    }
+  ],
+
+  "fresh rosemary": [
+    {
+      "substitute": "dried rosemary",
+      "ratio": "1 tsp dried per 1 tbsp fresh",
+      "notes": "Crush dried rosemary before adding if the pieces are large."
+    }
+  ],
+
+  "allspice": [
+    {
+      "substitute": "cinnamon + ground cloves",
+      "ratio": "1/2 tsp cinnamon + 1/2 tsp ground cloves per 1 tsp allspice",
+      "notes": "NDSU Extension substitution."
+    }
+  ],
+
+  "apple pie spice": [
+    {
+      "substitute": "cinnamon + nutmeg + cardamom",
+      "ratio": "1/2 tsp cinnamon + 1/4 tsp nutmeg + 1/8 tsp cardamom per 1 tsp",
+      "notes": "Useful when a premixed apple pie spice blend is unavailable."
+    }
+  ],
+
+  "vanilla extract": [
+    {
+      "substitute": "vanilla bean paste",
+      "ratio": "1:1",
+      "notes": "Adds visible vanilla seeds."
+    },
+    {
+      "substitute": "maple syrup",
+      "ratio": "1:1",
+      "notes": "Not a true vanilla replacement but can provide complementary sweetness and aroma."
+    }
+  ],
+
+  "yeast": [
+    {
+      "substitute": "instant yeast for active dry yeast",
+      "ratio": "1:1",
+      "notes": "Instant yeast can usually be mixed directly into dry ingredients."
+    },
+    {
+      "substitute": "active dry yeast for instant yeast",
+      "ratio": "1:1",
+      "notes": "Active dry yeast may benefit from dissolving or proofing first."
+    }
+  ]
 }
