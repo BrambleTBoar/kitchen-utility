@@ -8,25 +8,120 @@
   "cake flour": {
     "gramsPerCup": 114
   },
+  "whole wheat flour": {
+    "gramsPerCup": 113
+  },
+  "self-rising flour": {
+    "gramsPerCup": 113
+  },
+  "almond flour": {
+    "gramsPerCup": 96
+  },
+  "oat flour": {
+    "gramsPerCup": 92
+  },
+  "coconut flour": {
+    "gramsPerCup": 128
+  },
+  "cornstarch": {
+    "gramsPerCup": 120
+  },
+  "cornmeal": {
+    "gramsPerCup": 138
+  },
+
   "granulated sugar": {
     "gramsPerCup": 200
   },
-  "brown sugar": {
+  "brown sugar packed": {
     "gramsPerCup": 213
   },
   "powdered sugar": {
     "gramsPerCup": 113
   },
-  "butter": {
-    "gramsPerCup": 227
+  "caster sugar": {
+    "gramsPerCup": 190
   },
   "honey": {
     "gramsPerCup": 340
   },
+  "maple syrup": {
+    "gramsPerCup": 320
+  },
+  "molasses": {
+    "gramsPerCup": 340
+  },
+
+  "butter": {
+    "gramsPerCup": 227
+  },
+  "vegetable oil": {
+    "gramsPerCup": 218
+  },
+  "olive oil": {
+    "gramsPerCup": 216
+  },
+  "coconut oil": {
+    "gramsPerCup": 218
+  },
+  "vegetable shortening": {
+    "gramsPerCup": 192
+  },
+  "peanut butter": {
+    "gramsPerCup": 258
+  },
+
   "water": {
     "gramsPerCup": 237
   },
-  "milk": {
+  "whole milk": {
     "gramsPerCup": 245
+  },
+  "buttermilk": {
+    "gramsPerCup": 245
+  },
+  "heavy cream": {
+    "gramsPerCup": 232
+  },
+  "plain yogurt": {
+    "gramsPerCup": 245
+  },
+  "sour cream": {
+    "gramsPerCup": 240
+  },
+
+  "rolled oats": {
+    "gramsPerCup": 81
+  },
+  "long-grain rice uncooked": {
+    "gramsPerCup": 185
+  },
+  "short-grain rice uncooked": {
+    "gramsPerCup": 200
+  },
+  "breadcrumbs dried": {
+    "gramsPerCup": 108
+  },
+
+  "chocolate chips": {
+    "gramsPerCup": 170
+  },
+  "cocoa powder": {
+    "gramsPerCup": 85
+  },
+  "raisins": {
+    "gramsPerCup": 165
+  },
+  "walnuts chopped": {
+    "gramsPerCup": 117
+  },
+  "almonds whole": {
+    "gramsPerCup": 142
+  },
+  "cashews": {
+    "gramsPerCup": 113
+  },
+  "parmesan grated": {
+    "gramsPerCup": 100
   }
 }
