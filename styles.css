@@ -16,23 +16,15 @@
 
     --border: #d5d0c7;
     --danger: #b83a3a;
+    --danger-hover: #922f2f;
 
     --radius: 14px;
     --radius-small: 9px;
 
     --shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
 
-    /*
-     * Touch targets should generally be at least
-     * around 48px tall. We'll use 52-56px.
-     */
     --touch-height: 54px;
 }
-
-
-/* --------------------------------------------------
-   Global
--------------------------------------------------- */
 
 * {
     box-sizing: border-box;
@@ -45,7 +37,6 @@ html {
 
 body {
     margin: 0;
-    padding: 0;
 
     background: var(--bg);
     color: var(--text);
@@ -62,11 +53,6 @@ body {
 
     min-height: 100vh;
 }
-
-
-/* --------------------------------------------------
-   Header
--------------------------------------------------- */
 
 header {
     background: var(--primary);
@@ -98,19 +84,13 @@ header p {
     opacity: 0.9;
 }
 
-
-/* --------------------------------------------------
-   Main tool navigation
--------------------------------------------------- */
+/* Navigation */
 
 .tabs {
     display: grid;
 
-    /*
-     * Two large buttons per row works much better
-     * on kitchen tablets than six tiny tabs.
-     */
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
 
     gap: 10px;
 
@@ -130,27 +110,12 @@ header p {
 
     padding: 10px 12px;
 
-    font-family: inherit;
-    font-size: 1rem;
+    font: inherit;
     font-weight: 700;
 
     cursor: pointer;
 
     touch-action: manipulation;
-
-    transition:
-        background-color 0.15s ease,
-        border-color 0.15s ease,
-        color 0.15s ease,
-        transform 0.08s ease;
-}
-
-.tab:hover {
-    border-color: var(--primary);
-}
-
-.tab:active {
-    transform: scale(0.98);
 }
 
 .tab.active {
@@ -160,22 +125,18 @@ header p {
     border-color: var(--primary);
 }
 
-
-/* --------------------------------------------------
-   Main content
--------------------------------------------------- */
+/* Main panels */
 
 main {
     width: min(900px, calc(100% - 24px));
 
     margin: 0 auto;
+
     padding-bottom:
         max(40px, env(safe-area-inset-bottom));
 }
 
 .tool-panel {
-    display: block;
-
     background: var(--surface);
 
     border: 1px solid var(--border);
@@ -208,10 +169,7 @@ main {
     margin-bottom: 22px;
 }
 
-
-/* --------------------------------------------------
-   Forms
--------------------------------------------------- */
+/* Forms */
 
 .form-group {
     margin-bottom: 20px;
@@ -223,7 +181,6 @@ label {
     margin-bottom: 7px;
 
     font-weight: 700;
-    font-size: 1rem;
 }
 
 input,
@@ -242,16 +199,8 @@ textarea {
     background: white;
     color: var(--text);
 
-    /*
-     * 16px+ also prevents unwanted automatic zoom
-     * on many mobile browsers.
-     */
-    font-family: inherit;
+    font: inherit;
     font-size: 18px;
-
-    transition:
-        border-color 0.15s ease,
-        box-shadow 0.15s ease;
 }
 
 input:focus,
@@ -265,18 +214,7 @@ textarea:focus {
         0 0 0 3px rgba(47, 111, 78, 0.18);
 }
 
-select {
-    cursor: pointer;
-}
-
-input[type="number"] {
-    font-variant-numeric: tabular-nums;
-}
-
-
-/* --------------------------------------------------
-   General buttons
--------------------------------------------------- */
+/* Buttons */
 
 button,
 .btn {
@@ -305,26 +243,21 @@ button,
     font-weight: 700;
 
     cursor: pointer;
-
-    text-decoration: none;
-
-    transition:
-        background-color 0.15s ease,
-        transform 0.08s ease;
 }
 
 .btn:hover {
     background: var(--primary-hover);
 }
 
-.btn:active {
-    transform: scale(0.97);
+.btn-secondary {
+    background: #6b6b6b;
 }
 
+.btn-secondary:hover {
+    background: #505050;
+}
 
-/* --------------------------------------------------
-   Result cards
--------------------------------------------------- */
+/* Result cards */
 
 .results {
     margin-top: 20px;
@@ -341,23 +274,229 @@ button,
     display: none;
 }
 
-.results p {
-    margin: 7px 0;
+/* Compact Recipe Scaler */
+
+.scaler-servings {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
 }
 
-.results strong {
-    font-size: 1.08em;
+.scaler-fraction-toolbar {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 14px;
+
+    background: var(--surface-alt);
+
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+
+    padding: 12px;
+
+    margin-bottom: 14px;
 }
 
+.scaler-fraction-toolbar > div:first-child {
+    display: flex;
+    flex-direction: column;
+}
 
-/* --------------------------------------------------
-   Converter type controls
--------------------------------------------------- */
+#fraction-target-label {
+    color: var(--text-muted);
+
+    font-size: 0.85rem;
+}
+
+.fraction-buttons {
+    display: grid;
+
+    grid-template-columns:
+        repeat(5, minmax(48px, 1fr));
+
+    gap: 7px;
+}
+
+.fraction-buttons button {
+    min-width: 50px;
+    min-height: 50px;
+
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-small);
+
+    background: white;
+    color: var(--primary);
+
+    font-size: 1.3rem;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.fraction-buttons button:active {
+    background: var(--primary-light);
+}
+
+.ingredient-table {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+
+    overflow: hidden;
+
+    background: var(--surface);
+}
+
+.ingredient-table-header,
+.ingredient-row {
+    display: grid;
+
+    grid-template-columns:
+        minmax(160px, 2.4fr)
+        minmax(90px, 0.8fr)
+        minmax(110px, 1fr)
+        64px;
+
+    gap: 8px;
+
+    align-items: center;
+}
+
+.ingredient-table-header {
+    background: var(--primary);
+    color: white;
+
+    padding: 9px 10px;
+
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.ingredient-row {
+    padding: 8px 10px;
+
+    border-bottom: 1px solid var(--border);
+
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.ingredient-row:last-child {
+    border-bottom: 0;
+}
+
+.ingredient-row.active-amount-row {
+    background: var(--primary-light);
+
+    box-shadow:
+        inset 4px 0 0 var(--primary);
+}
+
+.ingredient-row input,
+.ingredient-row select {
+    min-height: 48px;
+
+    padding: 8px 10px;
+
+    font-size: 16px;
+}
+
+.ingredient-amount {
+    text-align: center;
+}
+
+.ingredient-remove {
+    width: 50px;
+    height: 50px;
+
+    border: 0;
+    border-radius: var(--radius-small);
+
+    background: var(--danger);
+    color: white;
+
+    font-size: 1.7rem;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.ingredient-remove:hover {
+    background: var(--danger-hover);
+}
+
+.scaler-actions {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 10px;
+
+    margin-top: 14px;
+}
+
+.scale-summary {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding-bottom: 12px;
+    margin-bottom: 10px;
+
+    border-bottom: 1px solid rgba(47, 111, 78, 0.25);
+}
+
+.scale-summary span {
+    color: var(--text-muted);
+}
+
+.scaled-ingredient-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+.scaled-ingredient {
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 7px 4px;
+}
+
+.scaled-ingredient:nth-child(even) {
+    background:
+        rgba(255, 255, 255, 0.45);
+}
+
+.scaler-warning {
+    color: #8b4d00;
+
+    border-top:
+        1px solid rgba(217, 119, 6, 0.35);
+
+    padding-top: 10px;
+}
+
+/* Converter */
 
 .converter-type-tabs {
     display: grid;
 
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns:
+        repeat(3, 1fr);
 
     gap: 8px;
 
@@ -367,20 +506,14 @@ button,
 .converter-tab {
     min-height: var(--touch-height);
 
-    padding: 8px;
-
     border: 2px solid var(--border);
     border-radius: var(--radius-small);
 
     background: var(--surface-alt);
-    color: var(--text);
 
-    font-size: 0.95rem;
     font-weight: 700;
 
     cursor: pointer;
-
-    touch-action: manipulation;
 }
 
 .converter-tab.active {
@@ -390,45 +523,77 @@ button,
     color: white;
 }
 
+/* Timer */
 
-/* --------------------------------------------------
-   Recipe scaler
--------------------------------------------------- */
+.timer-create-panel {
+    background: var(--surface-alt);
 
-#ingredient-list {
-    display: flex;
-    flex-direction: column;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
 
-    gap: 12px;
+    padding: 18px;
 
-    margin-bottom: 16px;
+    margin-bottom: 24px;
 }
 
-/*
- * This intentionally supports likely existing
- * row layouts without requiring scaler.js changes.
- */
-#ingredient-list input,
-#ingredient-list select {
-    margin-bottom: 7px;
+.timer-duration {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 10px;
 }
 
-#add-ingredient {
+.timer-duration input {
+    text-align: center;
+
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.timer-presets {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 10px;
+
+    margin: 8px 0 18px;
+}
+
+.timer-preset {
+    min-height: 54px;
+
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-small);
+
+    background: white;
+    color: var(--primary);
+
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.timer-create-button {
     width: 100%;
 }
-
-
-/* --------------------------------------------------
-   Timer
--------------------------------------------------- */
 
 .timer-list {
     display: flex;
     flex-direction: column;
 
     gap: 16px;
+}
 
-    margin-bottom: 18px;
+.timer-empty {
+    color: var(--text-muted);
+
+    text-align: center;
+
+    padding: 2rem;
 }
 
 .timer-item {
@@ -446,34 +611,35 @@ button,
     background: #fff4dc;
 }
 
-.timer-name {
-    font-size: 1.15rem;
-    font-weight: 700;
-
+.timer-name,
+.timer-status,
+.timer-time {
     text-align: center;
+}
+
+.timer-name {
+    font-size: 1.2rem;
+    font-weight: 700;
 }
 
 .timer-time {
-    margin: 10px 0 4px;
+    margin: 12px 0 6px;
 
-    text-align: center;
+    color: var(--primary);
 
-    /*
-     * Very large countdown so it is readable
-     * from across the kitchen.
-     */
-    font-size: clamp(2.6rem, 12vw, 4.5rem);
+    font-size:
+        clamp(2.6rem, 12vw, 4.5rem);
+
     font-weight: 800;
-
     line-height: 1;
 
     font-variant-numeric: tabular-nums;
-
-    color: var(--primary);
 }
 
-.timer-item.finished .timer-time {
-    color: var(--accent);
+.timer-status {
+    color: var(--text-muted);
+
+    font-weight: 600;
 }
 
 .timer-controls {
@@ -487,133 +653,56 @@ button,
     margin-top: 16px;
 }
 
-.timer-controls .btn {
-    width: 100%;
+.timer-remove {
+    background: var(--danger);
 }
 
-#add-timer {
-    width: 100%;
-
-    min-height: 60px;
-
-    font-size: 1.1rem;
-}
-
-
-/* --------------------------------------------------
-   Ingredient weights
--------------------------------------------------- */
+/* Ingredient weights */
 
 #weight-results {
     text-align: center;
 }
 
 #weight-results p:nth-child(2) {
-    font-size: clamp(1.7rem, 7vw, 2.5rem);
-
     color: var(--primary);
+
+    font-size:
+        clamp(1.7rem, 7vw, 2.5rem);
 }
 
-
-/* --------------------------------------------------
-   Substitutions
--------------------------------------------------- */
-
-#sub-search {
-    /*
-     * Search field is particularly important on a
-     * touchscreen, so make it slightly oversized.
-     */
-    min-height: 58px;
-
-    font-size: 18px;
-}
-
-
-/* --------------------------------------------------
-   Accessible focus states
--------------------------------------------------- */
-
-button:focus-visible,
-.btn:focus-visible,
-.tab:focus-visible,
-.converter-tab:focus-visible {
-    outline: 3px solid var(--accent);
-    outline-offset: 3px;
-}
-
-
-/* --------------------------------------------------
-   Tablet / desktop
--------------------------------------------------- */
+/* Tablet and desktop */
 
 @media (min-width: 700px) {
-
     .tabs {
-        /*
-         * Three across on tablets gives us two rows
-         * of comfortably large controls.
-         */
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns:
+            repeat(3, 1fr);
     }
 
     .tool-panel {
         padding: 30px;
     }
-
-    .form-group {
-        max-width: 650px;
-    }
-
-    .timer-controls {
-        grid-template-columns:
-            repeat(auto-fit, minmax(140px, 1fr));
-    }
 }
 
-
-/* --------------------------------------------------
-   Large desktop
--------------------------------------------------- */
-
 @media (min-width: 1050px) {
-
     .tabs {
-        /*
-         * Desktop users can have the conventional
-         * one-row navigation while retaining
-         * reasonable target sizes.
-         */
-        width: min(1100px, calc(100% - 40px));
+        width:
+            min(1100px, calc(100% - 40px));
 
-        grid-template-columns: repeat(6, 1fr);
+        grid-template-columns:
+            repeat(6, 1fr);
     }
 
     main {
-        width: min(1000px, calc(100% - 40px));
-    }
-
-    .tab {
-        min-height: 54px;
-
-        font-size: 0.95rem;
+        width:
+            min(1000px, calc(100% - 40px));
     }
 }
 
+/* Phones */
 
-/* --------------------------------------------------
-   Small phones
--------------------------------------------------- */
-
-@media (max-width: 420px) {
-
+@media (max-width: 650px) {
     body {
         font-size: 16px;
-    }
-
-    header {
-        padding-left: 14px;
-        padding-right: 14px;
     }
 
     .tabs,
@@ -621,33 +710,61 @@ button:focus-visible,
         width: calc(100% - 16px);
     }
 
-    .tabs {
-        gap: 7px;
-
-        margin-top: 10px;
-        margin-bottom: 10px;
-    }
-
-    .tab {
-        min-height: 58px;
-
-        padding: 8px;
-
-        font-size: 0.9rem;
-    }
-
     .tool-panel {
-        padding: 16px;
-
-        margin-bottom: 16px;
+        padding: 14px;
     }
 
-    .converter-type-tabs {
-        /*
-         * On particularly narrow screens these are
-         * easier to hit stacked vertically.
-         */
-        grid-template-columns: 1fr;
+    .scaler-servings {
+        gap: 8px;
+    }
+
+    .scaler-fraction-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .fraction-buttons {
+        width: 100%;
+
+        grid-template-columns:
+            repeat(5, 1fr);
+    }
+
+    .fraction-buttons button {
+        min-width: 0;
+    }
+
+    .ingredient-table-header {
+        display: none;
+    }
+
+    .ingredient-row {
+        grid-template-columns:
+            minmax(0, 1.7fr)
+            minmax(72px, 0.7fr)
+            minmax(90px, 0.9fr)
+            50px;
+
+        gap: 5px;
+
+        padding: 7px;
+    }
+
+    .ingredient-row input,
+    .ingredient-row select {
+        min-width: 0;
+
+        padding: 7px 6px;
+    }
+
+    .ingredient-remove {
+        width: 48px;
+        height: 48px;
+    }
+
+    .timer-presets {
+        grid-template-columns:
+            repeat(2, 1fr);
     }
 
     .timer-controls {
@@ -655,20 +772,61 @@ button:focus-visible,
     }
 }
 
+@media (max-width: 430px) {
+    .ingredient-row {
+        grid-template-columns:
+            minmax(0, 1fr)
+            80px
+            48px;
 
-/* --------------------------------------------------
-   Reduced motion
--------------------------------------------------- */
+        grid-template-areas:
+            "name name remove"
+            "amount unit remove";
+    }
+
+    .ingredient-name {
+        grid-area: name;
+    }
+
+    .ingredient-amount {
+        grid-area: amount;
+    }
+
+    .ingredient-unit {
+        grid-area: unit;
+    }
+
+    .ingredient-remove {
+        grid-area: remove;
+
+        align-self: stretch;
+
+        height: auto;
+        min-height: 48px;
+    }
+
+    .scaler-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .scale-summary {
+        flex-direction: column;
+
+        gap: 2px;
+    }
+}
 
 @media (prefers-reduced-motion: reduce) {
-
     *,
     *::before,
     *::after {
-        scroll-behavior: auto !important;
+        transition-duration:
+            0.01ms !important;
 
-        transition-duration: 0.01ms !important;
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
+        animation-duration:
+            0.01ms !important;
+
+        animation-iteration-count:
+            1 !important;
     }
 }

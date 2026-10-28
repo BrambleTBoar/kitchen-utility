@@ -3,18 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Kitchen Tools</title>
+
     <meta
         name="description"
         content="Quick cooking conversions, substitutions, scaling, ingredient weights, dough calculations, and timers."
     >
+
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <header>
         <h1>Kitchen Tools</h1>
-        <p>Quick cooking conversions, substitutions, scaling, and reference tools.</p>
+        <p>
+            Quick cooking conversions, substitutions, scaling,
+            and reference tools.
+        </p>
     </header>
 
     <nav class="tabs" role="tablist">
@@ -23,6 +29,7 @@
             data-tab="dough"
             role="tab"
             aria-selected="true"
+            type="button"
         >
             Dough
         </button>
@@ -32,6 +39,7 @@
             data-tab="scaler"
             role="tab"
             aria-selected="false"
+            type="button"
         >
             Scaler
         </button>
@@ -41,6 +49,7 @@
             data-tab="timer"
             role="tab"
             aria-selected="false"
+            type="button"
         >
             Timer
         </button>
@@ -50,6 +59,7 @@
             data-tab="converter"
             role="tab"
             aria-selected="false"
+            type="button"
         >
             Converter
         </button>
@@ -59,6 +69,7 @@
             data-tab="substitutions"
             role="tab"
             aria-selected="false"
+            type="button"
         >
             Substitutions
         </button>
@@ -68,14 +79,15 @@
             data-tab="ingredient-weights"
             role="tab"
             aria-selected="false"
+            type="button"
         >
             Ingredient Weights
         </button>
     </nav>
 
     <main>
-
         <!-- Dough Calculator -->
+
         <section
             id="dough"
             class="tool-panel active"
@@ -85,6 +97,7 @@
 
             <div class="form-group">
                 <label for="flour">Flour (grams)</label>
+
                 <input
                     type="number"
                     id="flour"
@@ -96,6 +109,7 @@
 
             <div class="form-group">
                 <label for="hydration">Hydration (%)</label>
+
                 <input
                     type="number"
                     id="hydration"
@@ -107,6 +121,7 @@
 
             <div class="form-group">
                 <label for="salt">Salt (%)</label>
+
                 <input
                     type="number"
                     id="salt"
@@ -118,6 +133,7 @@
 
             <div class="form-group">
                 <label for="starter">Starter (%)</label>
+
                 <input
                     type="number"
                     id="starter"
@@ -127,11 +143,15 @@
                 >
             </div>
 
-            <div id="dough-results" class="results"></div>
+            <div
+                id="dough-results"
+                class="results"
+            ></div>
         </section>
 
 
-        <!-- Recipe Scaler -->
+        <!-- Compact Recipe Scaler -->
+
         <section
             id="scaler"
             class="tool-panel"
@@ -140,64 +160,237 @@
         >
             <h2>Recipe Scaler</h2>
 
-            <div class="form-group">
-                <label for="servings-current">Original servings</label>
-                <input
-                    type="number"
-                    id="servings-current"
-                    value="4"
-                    min="1"
-                    step="1"
-                >
+            <p>
+                Enter the original and target servings,
+                then add each ingredient as one compact row.
+            </p>
+
+            <div class="scaler-servings">
+                <div class="form-group">
+                    <label for="servings-current">
+                        Original Servings
+                    </label>
+
+                    <input
+                        type="number"
+                        id="servings-current"
+                        value="4"
+                        min="0.1"
+                        step="0.1"
+                        inputmode="decimal"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="servings-target">
+                        Target Servings
+                    </label>
+
+                    <input
+                        type="number"
+                        id="servings-target"
+                        value="8"
+                        min="0.1"
+                        step="0.1"
+                        inputmode="decimal"
+                    >
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="servings-target">Target servings</label>
-                <input
-                    type="number"
-                    id="servings-target"
-                    value="8"
-                    min="1"
-                    step="1"
+            <div class="scaler-fraction-toolbar">
+                <div>
+                    <strong>Quick Fraction</strong>
+
+                    <span id="fraction-target-label">
+                        Tap an Amount field first
+                    </span>
+                </div>
+
+                <div
+                    id="fraction-buttons"
+                    class="fraction-buttons"
+                    aria-label="Quick fractions"
                 >
+                    <button type="button" data-fraction="0.25">
+                        ¼
+                    </button>
+
+                    <button type="button" data-fraction="0.3333333333">
+                        ⅓
+                    </button>
+
+                    <button type="button" data-fraction="0.5">
+                        ½
+                    </button>
+
+                    <button type="button" data-fraction="0.6666666667">
+                        ⅔
+                    </button>
+
+                    <button type="button" data-fraction="0.75">
+                        ¾
+                    </button>
+                </div>
             </div>
 
-            <div id="ingredient-list"></div>
+            <div class="ingredient-table">
+                <div class="ingredient-table-header" aria-hidden="true">
+                    <span>Ingredient</span>
+                    <span>Amount</span>
+                    <span>Unit</span>
+                    <span>Remove</span>
+                </div>
 
-            <button
-                id="add-ingredient"
-                class="btn"
-                type="button"
-            >
-                + Add Ingredient
-            </button>
+                <div
+                    id="ingredient-list"
+                    class="ingredient-table-body"
+                ></div>
+            </div>
 
-            <div id="scaled-results" class="results"></div>
+            <div class="scaler-actions">
+                <button
+                    id="add-ingredient"
+                    class="btn"
+                    type="button"
+                >
+                    + Add Ingredient
+                </button>
+
+                <button
+                    id="clear-ingredients"
+                    class="btn btn-secondary"
+                    type="button"
+                >
+                    Clear Recipe
+                </button>
+            </div>
+
+            <div
+                id="scaled-results"
+                class="results"
+            ></div>
         </section>
 
 
         <!-- Cooking Timer -->
+
         <section
             id="timer"
             class="tool-panel"
             role="tabpanel"
             hidden
         >
-            <h2>Cooking Timer</h2>
+            <h2>Cooking Timers</h2>
 
-            <div id="timer-list" class="timer-list"></div>
+            <p>
+                Create and run multiple timers at the same time.
+            </p>
 
-            <button
-                id="add-timer"
-                class="btn"
-                type="button"
-            >
-                + Add Timer
-            </button>
+            <div class="timer-create-panel">
+                <div class="form-group">
+                    <label for="timer-name">
+                        Timer Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="timer-name"
+                        placeholder="Pasta, bread, chicken..."
+                        autocomplete="off"
+                    >
+                </div>
+
+                <div class="timer-duration">
+                    <div class="form-group">
+                        <label for="timer-hours">Hours</label>
+
+                        <input
+                            type="number"
+                            id="timer-hours"
+                            value="0"
+                            min="0"
+                            max="24"
+                            step="1"
+                            inputmode="numeric"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="timer-minutes">Minutes</label>
+
+                        <input
+                            type="number"
+                            id="timer-minutes"
+                            value="10"
+                            min="0"
+                            max="59"
+                            step="1"
+                            inputmode="numeric"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="timer-seconds">Seconds</label>
+
+                        <input
+                            type="number"
+                            id="timer-seconds"
+                            value="0"
+                            min="0"
+                            max="59"
+                            step="1"
+                            inputmode="numeric"
+                        >
+                    </div>
+                </div>
+
+                <div
+                    class="timer-presets"
+                    aria-label="Timer presets"
+                >
+                    <button type="button" class="timer-preset" data-minutes="1">
+                        1 min
+                    </button>
+
+                    <button type="button" class="timer-preset" data-minutes="5">
+                        5 min
+                    </button>
+
+                    <button type="button" class="timer-preset" data-minutes="10">
+                        10 min
+                    </button>
+
+                    <button type="button" class="timer-preset" data-minutes="15">
+                        15 min
+                    </button>
+
+                    <button type="button" class="timer-preset" data-minutes="30">
+                        30 min
+                    </button>
+
+                    <button type="button" class="timer-preset" data-minutes="60">
+                        1 hour
+                    </button>
+                </div>
+
+                <button
+                    id="add-timer"
+                    class="btn timer-create-button"
+                    type="button"
+                >
+                    Start New Timer
+                </button>
+            </div>
+
+            <div
+                id="timer-list"
+                class="timer-list"
+            ></div>
         </section>
 
 
         <!-- Unit Converter -->
+
         <section
             id="converter"
             class="tool-panel"
@@ -234,6 +427,7 @@
 
             <div class="form-group">
                 <label for="converter-value">Value</label>
+
                 <input
                     type="number"
                     id="converter-value"
@@ -252,11 +446,15 @@
                 <select id="converter-to"></select>
             </div>
 
-            <div id="converter-results" class="results"></div>
+            <div
+                id="converter-results"
+                class="results"
+            ></div>
         </section>
 
 
         <!-- Substitution Finder -->
+
         <section
             id="substitutions"
             class="tool-panel"
@@ -266,7 +464,10 @@
             <h2>Ingredient Substitution Finder</h2>
 
             <div class="form-group">
-                <label for="sub-search">Ingredient</label>
+                <label for="sub-search">
+                    Ingredient
+                </label>
+
                 <input
                     type="text"
                     id="sub-search"
@@ -275,7 +476,10 @@
                 >
             </div>
 
-            <div id="sub-results" class="results">
+            <div
+                id="sub-results"
+                class="results"
+            >
                 <p style="color: var(--text-muted);">
                     Type an ingredient to find substitutions.
                 </p>
@@ -284,6 +488,7 @@
 
 
         <!-- Ingredient Weights -->
+
         <section
             id="ingredient-weights"
             class="tool-panel"
@@ -298,12 +503,18 @@
             </p>
 
             <div class="form-group">
-                <label for="weight-ingredient">Ingredient</label>
+                <label for="weight-ingredient">
+                    Ingredient
+                </label>
+
                 <select id="weight-ingredient"></select>
             </div>
 
             <div class="form-group">
-                <label for="weight-amount">Amount</label>
+                <label for="weight-amount">
+                    Amount
+                </label>
+
                 <input
                     type="number"
                     id="weight-amount"
@@ -314,17 +525,30 @@
             </div>
 
             <div class="form-group">
-                <label for="weight-unit">Unit</label>
+                <label for="weight-unit">
+                    Unit
+                </label>
+
                 <select id="weight-unit">
-                    <option value="cup">Cups</option>
-                    <option value="tbsp">Tablespoons</option>
-                    <option value="tsp">Teaspoons</option>
+                    <option value="cup">
+                        Cups
+                    </option>
+
+                    <option value="tbsp">
+                        Tablespoons
+                    </option>
+
+                    <option value="tsp">
+                        Teaspoons
+                    </option>
                 </select>
             </div>
 
-            <div id="weight-results" class="results"></div>
+            <div
+                id="weight-results"
+                class="results"
+            ></div>
         </section>
-
     </main>
 
     <script src="js/app.js"></script>

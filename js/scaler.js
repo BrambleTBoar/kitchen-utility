@@ -2,12 +2,9 @@
 
 (() => {
     let ingredientCount = 0;
+    let activeAmountInput = null;
 
 
-    /*
-     * Safely escape user-entered ingredient names
-     * before inserting them into generated HTML.
-     */
     function escapeHtml(value) {
         return String(value)
             .replaceAll('&', '&amp;')
@@ -18,15 +15,6 @@
     }
 
 
-    /*
-     * Format scaled amounts without unnecessary
-     * trailing zeroes.
-     *
-     * Examples:
-     * 2.00  -> 2
-     * 1.50  -> 1.5
-     * 1.333 -> 1.33
-     */
     function formatScaledAmount(amount) {
         if (!Number.isFinite(amount)) {
             return '0';
@@ -44,225 +32,384 @@
         }
 
         return String(
-            parseFloat(
+            Number.parseFloat(
                 amount.toFixed(2)
             )
         );
     }
 
 
-    /*
-     * Build one touchscreen-friendly ingredient
-     * input card.
-     */
-    function createIngredientRow() {
-        ingredientCount++;
+    function setActiveAmountInput(
+        input
+    ) {
+        document
+            .querySelectorAll(
+                '.ingredient-row.active-amount-row'
+            )
+            .forEach(row => {
+                row.classList.remove(
+                    'active-amount-row'
+                );
+            });
+
+
+        activeAmountInput =
+            input || null;
+
+
+        const targetLabel =
+            document.getElementById(
+                'fraction-target-label'
+            );
+
+
+        if (!activeAmountInput) {
+            if (targetLabel) {
+                targetLabel.textContent =
+                    'Tap an Amount field first';
+            }
+
+            return;
+        }
+
 
         const row =
-            document.createElement('div');
-
-        row.className =
-            'recipe-input-row';
-
-        row.dataset.index =
-            String(ingredientCount);
+            activeAmountInput.closest(
+                '.ingredient-row'
+            );
 
 
-        /*
-         * Ingredient name field.
-         */
-        const nameGroup =
-            document.createElement('div');
-
-        nameGroup.className =
-            'recipe-field';
-
-
-        const nameLabel =
-            document.createElement('label');
-
-        nameLabel.textContent =
-            'Ingredient';
+        if (row) {
+            row.classList.add(
+                'active-amount-row'
+            );
+        }
 
 
         const nameInput =
-            document.createElement('input');
+            row
+                ? row.querySelector(
+                    '.ingredient-name'
+                )
+                : null;
+
+
+        const ingredientName =
+            nameInput &&
+            nameInput.value.trim()
+                ? nameInput.value.trim()
+                : `Ingredient ${row?.dataset.index || ''}`;
+
+
+        if (targetLabel) {
+            targetLabel.textContent =
+                `Applying fraction to ${ingredientName}`;
+        }
+    }
+
+
+    function applyFractionToActiveInput(
+        fractionValue
+    ) {
+        if (
+            !activeAmountInput ||
+            !Number.isFinite(
+                fractionValue
+            ) ||
+            fractionValue <= 0 ||
+            fractionValue >= 1
+        ) {
+            return;
+        }
+
+
+        const currentAmount =
+            Number.parseFloat(
+                activeAmountInput.value
+            );
+
+
+        const wholeNumber =
+            Number.isFinite(
+                currentAmount
+            ) &&
+            currentAmount >= 0
+                ? Math.floor(
+                    currentAmount
+                )
+                : 0;
+
+
+        const newAmount =
+            wholeNumber +
+            fractionValue;
+
+
+        activeAmountInput.value =
+            Number.parseFloat(
+                newAmount.toFixed(4)
+            ).toString();
+
+
+        activeAmountInput.dispatchEvent(
+            new Event(
+                'input',
+                {
+                    bubbles: true
+                }
+            )
+        );
+
+
+        activeAmountInput.focus();
+    }
+
+
+    function createUnitSelect() {
+        const unitSelect =
+            document.createElement(
+                'select'
+            );
+
+
+        unitSelect.className =
+            'ingredient-unit';
+
+
+        unitSelect.setAttribute(
+            'aria-label',
+            'Ingredient unit'
+        );
+
+
+        unitSelect.innerHTML = `
+            <option value="g">g</option>
+            <option value="kg">kg</option>
+            <option value="oz">oz</option>
+            <option value="lb">lb</option>
+            <option value="ml">mL</option>
+            <option value="l">L</option>
+            <option value="cup">cups</option>
+            <option value="tbsp">tbsp</option>
+            <option value="tsp">tsp</option>
+            <option value="piece">pieces</option>
+        `;
+
+
+        return unitSelect;
+    }
+
+
+    function createIngredientRow() {
+        ingredientCount++;
+
+
+        const row =
+            document.createElement(
+                'div'
+            );
+
+
+        row.className =
+            'ingredient-row';
+
+
+        row.dataset.index =
+            String(
+                ingredientCount
+            );
+
+
+        const nameInput =
+            document.createElement(
+                'input'
+            );
+
 
         nameInput.type =
             'text';
 
-        nameInput.placeholder =
-            'Flour, sugar, milk...';
 
         nameInput.className =
             'ingredient-name';
+
+
+        nameInput.placeholder =
+            'Ingredient';
+
 
         nameInput.autocomplete =
             'off';
 
 
-        nameGroup.appendChild(
-            nameLabel
+        nameInput.setAttribute(
+            'aria-label',
+            `Ingredient ${ingredientCount} name`
         );
-
-        nameGroup.appendChild(
-            nameInput
-        );
-
-
-        /*
-         * Ingredient amount field.
-         */
-        const amountGroup =
-            document.createElement('div');
-
-        amountGroup.className =
-            'recipe-field';
-
-
-        const amountLabel =
-            document.createElement('label');
-
-        amountLabel.textContent =
-            'Amount';
 
 
         const amountInput =
-            document.createElement('input');
+            document.createElement(
+                'input'
+            );
+
 
         amountInput.type =
             'number';
 
-        amountInput.placeholder =
-            'Amount';
 
         amountInput.className =
             'ingredient-amount';
 
+
+        amountInput.placeholder =
+            '0';
+
+
         amountInput.min =
             '0';
 
+
         amountInput.step =
-            '0.1';
+            'any';
+
 
         amountInput.inputMode =
             'decimal';
 
 
-        amountGroup.appendChild(
-            amountLabel
+        amountInput.setAttribute(
+            'aria-label',
+            `Ingredient ${ingredientCount} amount`
         );
-
-        amountGroup.appendChild(
-            amountInput
-        );
-
-
-        /*
-         * Ingredient unit field.
-         */
-        const unitGroup =
-            document.createElement('div');
-
-        unitGroup.className =
-            'recipe-field';
-
-
-        const unitLabel =
-            document.createElement('label');
-
-        unitLabel.textContent =
-            'Unit';
 
 
         const unitSelect =
-            document.createElement('select');
-
-        unitSelect.className =
-            'ingredient-unit';
-
-        unitSelect.innerHTML = `
-            <option value="g">grams</option>
-            <option value="kg">kilograms</option>
-
-            <option value="oz">ounces</option>
-            <option value="lb">pounds</option>
-
-            <option value="ml">milliliters</option>
-            <option value="l">liters</option>
-
-            <option value="cup">cups</option>
-            <option value="tbsp">tablespoons</option>
-            <option value="tsp">teaspoons</option>
-
-            <option value="piece">pieces</option>
-        `;
+            createUnitSelect();
 
 
-        unitGroup.appendChild(
-            unitLabel
-        );
-
-        unitGroup.appendChild(
-            unitSelect
-        );
-
-
-        /*
-         * Remove button.
-         */
         const removeButton =
-            document.createElement('button');
+            document.createElement(
+                'button'
+            );
+
 
         removeButton.type =
             'button';
 
+
         removeButton.className =
-            'btn recipe-remove';
+            'ingredient-remove';
+
 
         removeButton.textContent =
-            'Remove';
+            '×';
 
 
-        /*
-         * Input changes update the results
-         * immediately.
-         */
+        removeButton.title =
+            'Remove ingredient';
+
+
+        removeButton.setAttribute(
+            'aria-label',
+            `Remove ingredient ${ingredientCount}`
+        );
+
+
         nameInput.addEventListener(
             'input',
-            scaleRecipe
+            () => {
+                scaleRecipe();
+
+                if (
+                    activeAmountInput ===
+                    amountInput
+                ) {
+                    setActiveAmountInput(
+                        amountInput
+                    );
+                }
+            }
         );
+
+
+        amountInput.addEventListener(
+            'focus',
+            () => {
+                setActiveAmountInput(
+                    amountInput
+                );
+            }
+        );
+
+
+        amountInput.addEventListener(
+            'pointerdown',
+            () => {
+                setActiveAmountInput(
+                    amountInput
+                );
+            }
+        );
+
 
         amountInput.addEventListener(
             'input',
             scaleRecipe
         );
 
+
         unitSelect.addEventListener(
             'change',
             scaleRecipe
         );
 
+
         removeButton.addEventListener(
             'click',
             () => {
+                if (
+                    activeAmountInput ===
+                    amountInput
+                ) {
+                    activeAmountInput =
+                        null;
+                }
+
+
                 row.remove();
+
+
+                const firstRemainingAmount =
+                    document.querySelector(
+                        '.ingredient-amount'
+                    );
+
+
+                setActiveAmountInput(
+                    firstRemainingAmount
+                );
+
+
                 scaleRecipe();
             }
         );
 
 
         row.appendChild(
-            nameGroup
+            nameInput
         );
 
-        row.appendChild(
-            amountGroup
-        );
 
         row.appendChild(
-            unitGroup
+            amountInput
         );
+
+
+        row.appendChild(
+            unitSelect
+        );
+
 
         row.appendChild(
             removeButton
@@ -271,19 +418,20 @@
 
         return {
             row,
-            nameInput
+            nameInput,
+            amountInput
         };
     }
 
 
-    /*
-     * Add one ingredient card to the page.
-     */
-    function addIngredientRow(options = {}) {
+    function addIngredientRow(
+        options = {}
+    ) {
         const container =
             document.getElementById(
                 'ingredient-list'
             );
+
 
         if (!container) {
             console.error(
@@ -295,13 +443,14 @@
 
 
         const {
-            focus = true
+            focusName = true
         } = options;
 
 
         const {
             row,
-            nameInput
+            nameInput,
+            amountInput
         } = createIngredientRow();
 
 
@@ -310,16 +459,15 @@
         );
 
 
+        setActiveAmountInput(
+            amountInput
+        );
+
+
         scaleRecipe();
 
 
-        /*
-         * Focus only when the row was created by
-         * a deliberate user action. The initial
-         * row should not unexpectedly steal focus
-         * when the page loads.
-         */
-        if (focus) {
+        if (focusName) {
             nameInput.focus();
         }
 
@@ -328,19 +476,20 @@
     }
 
 
-    /*
-     * Read one ingredient row.
-     */
-    function getIngredientFromRow(row) {
+    function getIngredientFromRow(
+        row
+    ) {
         const nameInput =
             row.querySelector(
                 '.ingredient-name'
             );
 
+
         const amountInput =
             row.querySelector(
                 '.ingredient-amount'
             );
+
 
         const unitSelect =
             row.querySelector(
@@ -360,8 +509,10 @@
         const name =
             nameInput.value.trim();
 
+
         const rawAmount =
             amountInput.value.trim();
+
 
         const amount =
             rawAmount === ''
@@ -370,35 +521,36 @@
                     rawAmount
                 );
 
-        const unit =
-            unitSelect.value;
-
 
         return {
             name,
             amount,
-            unit,
+            unit:
+                unitSelect.value,
+
             hasName:
                 name.length > 0,
+
             hasAmount:
-                Number.isFinite(amount)
+                Number.isFinite(
+                    amount
+                )
         };
     }
 
 
-    /*
-     * Calculate all scaled ingredients.
-     */
     function scaleRecipe() {
         const currentInput =
             document.getElementById(
                 'servings-current'
             );
 
+
         const targetInput =
             document.getElementById(
                 'servings-target'
             );
+
 
         const results =
             document.getElementById(
@@ -420,6 +572,7 @@
                 currentInput.value
             );
 
+
         const targetServings =
             Number.parseFloat(
                 targetInput.value
@@ -438,8 +591,8 @@
         ) {
             results.innerHTML = `
                 <p>
-                    Enter valid original and target
-                    serving amounts greater than zero.
+                    Enter valid serving amounts
+                    greater than zero.
                 </p>
             `;
 
@@ -454,29 +607,20 @@
 
         const rows =
             document.querySelectorAll(
-                '#ingredient-list .recipe-input-row'
+                '#ingredient-list .ingredient-row'
             );
 
 
-        if (rows.length === 0) {
-            results.innerHTML = `
-                <p>
-                    Add ingredients to scale the recipe.
-                </p>
-            `;
-
-            return;
-        }
-
-
         let ingredientHtml = '';
-        let completeIngredientCount = 0;
-        let incompleteIngredientCount = 0;
+        let completeCount = 0;
+        let incompleteCount = 0;
 
 
         rows.forEach(row => {
             const ingredient =
-                getIngredientFromRow(row);
+                getIngredientFromRow(
+                    row
+                );
 
 
             if (!ingredient) {
@@ -484,9 +628,6 @@
             }
 
 
-            /*
-             * Completely empty rows are ignored.
-             */
             if (
                 !ingredient.hasName &&
                 !ingredient.hasAmount
@@ -495,16 +636,12 @@
             }
 
 
-            /*
-             * A partly completed row should not
-             * silently become zero or "Unnamed."
-             */
             if (
                 !ingredient.hasName ||
                 !ingredient.hasAmount ||
                 ingredient.amount < 0
             ) {
-                incompleteIngredientCount++;
+                incompleteCount++;
                 return;
             }
 
@@ -516,25 +653,25 @@
 
             ingredientHtml += `
                 <div class="scaled-ingredient">
-                    <strong>
+                    <span>
                         ${escapeHtml(
                             ingredient.name
                         )}
-                    </strong>
+                    </span>
 
-                    <span>
+                    <strong>
                         ${formatScaledAmount(
                             scaledAmount
                         )}
                         ${escapeHtml(
                             ingredient.unit
                         )}
-                    </span>
+                    </strong>
                 </div>
             `;
 
 
-            completeIngredientCount++;
+            completeCount++;
         });
 
 
@@ -553,34 +690,38 @@
                 </strong>
 
                 <span>
-                    Scale factor:
                     ${ratio.toFixed(2)}×
                 </span>
             </div>
         `;
 
 
-        if (completeIngredientCount > 0) {
-            html +=
-                ingredientHtml;
+        if (completeCount > 0) {
+            html += `
+                <div class="scaled-ingredient-list">
+                    ${ingredientHtml}
+                </div>
+            `;
         } else {
             html += `
                 <p>
-                    Enter an ingredient name
-                    and amount above.
+                    Enter ingredient names
+                    and amounts above.
                 </p>
             `;
         }
 
 
-        if (incompleteIngredientCount > 0) {
+        if (incompleteCount > 0) {
             html += `
                 <p class="scaler-warning">
-                    ${incompleteIngredientCount}
+                    ${incompleteCount}
                     incomplete ingredient
-                    ${incompleteIngredientCount === 1
-                        ? 'row was'
-                        : 'rows were'}
+                    ${
+                        incompleteCount === 1
+                            ? 'row was'
+                            : 'rows were'
+                    }
                     not included.
                 </p>
             `;
@@ -592,16 +733,12 @@
     }
 
 
-    /*
-     * Remove every ingredient row and create one
-     * fresh row. This is exposed for future use,
-     * such as a Clear Recipe button.
-     */
     function clearIngredients() {
         const container =
             document.getElementById(
                 'ingredient-list'
             );
+
 
         if (!container) {
             return;
@@ -610,35 +747,79 @@
 
         container.replaceChildren();
 
+
+        activeAmountInput =
+            null;
+
+
         addIngredientRow({
-            focus: false
+            focusName: false
         });
     }
 
 
-    /*
-     * Initialize scaler controls.
-     */
+    function handleFractionClick(
+        event
+    ) {
+        const button =
+            event.target.closest(
+                '[data-fraction]'
+            );
+
+
+        if (!button) {
+            return;
+        }
+
+
+        const fractionValue =
+            Number.parseFloat(
+                button.dataset.fraction
+            );
+
+
+        applyFractionToActiveInput(
+            fractionValue
+        );
+    }
+
+
     function initializeRecipeScaler() {
         const addButton =
             document.getElementById(
                 'add-ingredient'
             );
 
+
+        const clearButton =
+            document.getElementById(
+                'clear-ingredients'
+            );
+
+
         const currentInput =
             document.getElementById(
                 'servings-current'
             );
+
 
         const targetInput =
             document.getElementById(
                 'servings-target'
             );
 
+
         const ingredientList =
             document.getElementById(
                 'ingredient-list'
             );
+
+
+        const fractionButtons =
+            document.getElementById(
+                'fraction-buttons'
+            );
+
 
         const results =
             document.getElementById(
@@ -648,13 +829,15 @@
 
         if (
             !addButton ||
+            !clearButton ||
             !currentInput ||
             !targetInput ||
             !ingredientList ||
+            !fractionButtons ||
             !results
         ) {
             console.error(
-                'Recipe Scaler elements were not found.'
+                'Compact Recipe Scaler elements were not found.'
             );
 
             return;
@@ -665,9 +848,15 @@
             'click',
             () => {
                 addIngredientRow({
-                    focus: true
+                    focusName: true
                 });
             }
+        );
+
+
+        clearButton.addEventListener(
+            'click',
+            clearIngredients
         );
 
 
@@ -676,35 +865,44 @@
             scaleRecipe
         );
 
+
         targetInput.addEventListener(
             'input',
             scaleRecipe
         );
 
 
-        /*
-         * Prevent duplicate default rows if this
-         * script is ever initialized more than once.
-         */
+        fractionButtons.addEventListener(
+            'click',
+            handleFractionClick
+        );
+
+
         if (
-            ingredientList.children.length === 0
+            ingredientList
+                .children
+                .length === 0
         ) {
             addIngredientRow({
-                focus: false
+                focusName: false
             });
         } else {
+            const firstAmountInput =
+                ingredientList.querySelector(
+                    '.ingredient-amount'
+                );
+
+
+            setActiveAmountInput(
+                firstAmountInput
+            );
+
+
             scaleRecipe();
         }
     }
 
 
-    /*
-     * Expose only the intentional public API.
-     *
-     * Helpers such as escapeHtml,
-     * createIngredientRow, and
-     * getIngredientFromRow remain private.
-     */
     window.kitchenApp =
         window.kitchenApp || {};
 
@@ -713,14 +911,11 @@
         addIngredientRow,
         scaleRecipe,
         clearIngredients,
-        formatScaledAmount
+        setActiveAmountInput,
+        applyFractionToActiveInput
     };
 
 
-    /*
-     * Preserve backward compatibility with the
-     * original Kitchen Utility global API.
-     */
     window.recipeScaler = {
         addIngredientRow,
         scaleRecipe
