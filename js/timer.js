@@ -1,18 +1,17 @@
 // js/timer.js
 
 (() => {
+    const STORAGE_KEY = 'kitchenToolsTimers';
+    const STORAGE_VERSION = 1;
+    const TICK_INTERVAL_MS = 250;
+
     const timers = new Map();
 
     let timerIdCounter = 0;
     let sharedAudioContext = null;
     let tickerIntervalId = null;
 
-    const TICK_INTERVAL_MS = 250;
 
-
-    /*
-     * Format seconds as MM:SS or HH:MM:SS.
-     */
     function formatTime(totalSeconds) {
         const safeSeconds = Math.max(
             0,
@@ -45,10 +44,6 @@
     }
 
 
-    /*
-     * Escape timer names before adding them
-     * to generated HTML.
-     */
     function escapeHtml(value) {
         return String(value)
             .replaceAll('&', '&amp;')
@@ -59,14 +54,6 @@
     }
 
 
-    /*
-     * Initialize audio while processing a direct
-     * user interaction.
-     *
-     * Mobile browsers may block audio if the
-     * AudioContext is first created only after
-     * a timer finishes.
-     */
     async function unlockAudio() {
         try {
             const AudioContextClass =
@@ -92,17 +79,17 @@
                 await sharedAudioContext.resume();
             }
 
-            /*
-             * Brief silent oscillator used to unlock
-             * audio on stricter mobile browsers.
-             */
             const oscillator =
-                sharedAudioContext.createOscillator();
+                sharedAudioContext
+                    .createOscillator();
 
             const gainNode =
-                sharedAudioContext.createGain();
+                sharedAudioContext
+                    .createGain();
 
-            oscillator.connect(gainNode);
+            oscillator.connect(
+                gainNode
+            );
 
             gainNode.connect(
                 sharedAudioContext.destination
@@ -130,15 +117,10 @@
     }
 
 
-    /*
-     * Calculate remaining time from an absolute
-     * timestamp. This prevents drift when the
-     * browser throttles background tabs.
-     */
     function calculateRemainingSeconds(timer) {
         if (
             !timer.running ||
-            !timer.endsAt
+            !Number.isFinite(timer.endsAt)
         ) {
             return Math.max(
                 0,
@@ -156,21 +138,355 @@
     }
 
 
-    function addTimer(name, totalSeconds) {
+    /*
+     * Convert live timer objects into plain data
+     * safe to place in localStorage.
+     */
+    function serializeTimers() {
+        return {
+            version: STORAGE_VERSION,
+
+            timerIdCounter,
+
+            timers:
+                Array.from(
+                    timers.values()
+                ).map(timer => ({
+                    id: timer.id,
+                    name: timer.name,
+                    totalSeconds:
+                        timer.totalSeconds,
+                    remainingSeconds:
+                        timer.running
+                            ? calculateRemainingSeconds(
+                                timer
+                            )
+                            : timer.remainingSeconds,
+                    endsAt:
+                        timer.endsAt,
+                    running:
+                        timer.running,
+                    finished:
+                        timer.finished
+                }))
+        };
+    }
+
+
+    function saveTimers() {
+        try {
+            const serialized =
+                serializeTimers();
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(
+                    serialized
+                )
+            );
+
+        } catch (error) {
+            /*
+             * A browser kiosk/private mode may
+             * prohibit localStorage. Timers still
+             * work for the active page session.
+             */
+            console.warn(
+                'Unable to save timers:',
+                error
+            );
+        }
+    }
+
+
+    function clearSavedTimers() {
+        try {
+            localStorage.removeItem(
+                STORAGE_KEY
+            );
+        } catch (error) {
+            console.warn(
+                'Unable to clear saved timers:',
+                error
+            );
+        }
+    }
+
+
+    function validateStoredTimer(
+        storedTimer
+    ) {
         if (
-            !Number.isFinite(totalSeconds) ||
-            totalSeconds <= 0
+            !storedTimer ||
+            typeof storedTimer !== 'object'
         ) {
             return null;
         }
 
         const id =
+            Number(storedTimer.id);
+
+        const totalSeconds =
+            Number(
+                storedTimer.totalSeconds
+            );
+
+        const remainingSeconds =
+            Number(
+                storedTimer.remainingSeconds
+            );
+
+        const rawEndsAt =
+            storedTimer.endsAt;
+
+        const endsAt =
+            rawEndsAt === null
+                ? null
+                : Number(rawEndsAt);
+
+        const name =
+            typeof storedTimer.name ===
+                'string'
+                ? storedTimer.name
+                    .trim()
+                    .slice(0, 200)
+                : 'Timer';
+
+        const running =
+            storedTimer.running === true;
+
+        const finished =
+            storedTimer.finished === true;
+
+
+        if (
+            !Number.isInteger(id) ||
+            id <= 0
+        ) {
+            return null;
+        }
+
+
+        if (
+            !Number.isFinite(
+                totalSeconds
+            ) ||
+            totalSeconds <= 0
+        ) {
+            return null;
+        }
+
+
+        if (
+            !Number.isFinite(
+                remainingSeconds
+            ) ||
+            remainingSeconds < 0
+        ) {
+            return null;
+        }
+
+
+        if (
+            running &&
+            (
+                !Number.isFinite(endsAt) ||
+                endsAt <= 0
+            )
+        ) {
+            return null;
+        }
+
+
+        return {
+            id,
+            name:
+                name ||
+                `Timer ${id}`,
+            totalSeconds,
+            remainingSeconds:
+                Math.min(
+                    remainingSeconds,
+                    totalSeconds
+                ),
+            endsAt:
+                running
+                    ? endsAt
+                    : null,
+            running,
+            finished,
+            alarmPlayed:
+                finished
+        };
+    }
+
+
+    function restoreTimers() {
+        let storedValue;
+
+        try {
+            storedValue =
+                localStorage.getItem(
+                    STORAGE_KEY
+                );
+        } catch (error) {
+            console.warn(
+                'Unable to read saved timers:',
+                error
+            );
+
+            return;
+        }
+
+
+        if (!storedValue) {
+            return;
+        }
+
+
+        try {
+            const savedState =
+                JSON.parse(
+                    storedValue
+                );
+
+
+            if (
+                !savedState ||
+                typeof savedState !==
+                    'object' ||
+                savedState.version !==
+                    STORAGE_VERSION ||
+                !Array.isArray(
+                    savedState.timers
+                )
+            ) {
+                clearSavedTimers();
+                return;
+            }
+
+
+            let highestId = 0;
+
+
+            savedState.timers.forEach(
+                storedTimer => {
+
+                    const timer =
+                        validateStoredTimer(
+                            storedTimer
+                        );
+
+
+                    if (!timer) {
+                        return;
+                    }
+
+
+                    highestId =
+                        Math.max(
+                            highestId,
+                            timer.id
+                        );
+
+
+                    /*
+                     * A running timer may have
+                     * elapsed while the page was
+                     * closed.
+                     */
+                    if (timer.running) {
+                        timer.remainingSeconds =
+                            calculateRemainingSeconds(
+                                timer
+                            );
+
+
+                        if (
+                            timer.remainingSeconds <=
+                            0
+                        ) {
+                            timer.remainingSeconds = 0;
+                            timer.endsAt = null;
+                            timer.running = false;
+                            timer.finished = true;
+
+                            /*
+                             * Do not sound the alarm
+                             * simply because an old
+                             * expired timer was
+                             * restored.
+                             */
+                            timer.alarmPlayed = true;
+                        }
+                    }
+
+
+                    timers.set(
+                        timer.id,
+                        timer
+                    );
+                }
+            );
+
+
+            timerIdCounter =
+                Math.max(
+                    Number.isInteger(
+                        savedState
+                            .timerIdCounter
+                    )
+                        ? savedState
+                            .timerIdCounter
+                        : 0,
+                    highestId
+                );
+
+
+            /*
+             * Rewrite storage after cleanup so
+             * expired/corrected state is saved.
+             */
+            saveTimers();
+
+        } catch (error) {
+            console.warn(
+                'Saved timer data was invalid and has been discarded:',
+                error
+            );
+
+            clearSavedTimers();
+        }
+    }
+
+
+    function addTimer(
+        name,
+        totalSeconds
+    ) {
+        if (
+            !Number.isFinite(
+                totalSeconds
+            ) ||
+            totalSeconds <= 0
+        ) {
+            return null;
+        }
+
+
+        const id =
             ++timerIdCounter;
+
 
         timers.set(id, {
             id,
             name:
-                name ||
+                String(
+                    name ||
+                    `Timer ${id}`
+                )
+                    .trim()
+                    .slice(0, 200) ||
                 `Timer ${id}`,
             totalSeconds,
             remainingSeconds:
@@ -181,7 +497,10 @@
             alarmPlayed: false
         });
 
+
+        saveTimers();
         renderTimerList();
+
 
         return id;
     }
@@ -191,36 +510,35 @@
         const timer =
             timers.get(id);
 
+
         if (
             !timer ||
             timer.running ||
-            timer.finished
+            timer.finished ||
+            timer.remainingSeconds <= 0
         ) {
             return;
         }
 
-        /*
-         * The Start button is a direct user action,
-         * so this is a good time to unlock audio.
-         */
+
         await unlockAudio();
+
 
         timer.running = true;
         timer.finished = false;
         timer.alarmPlayed = false;
 
+
         timer.endsAt =
             Date.now() +
-            (timer.remainingSeconds * 1000);
+            (
+                timer.remainingSeconds *
+                1000
+            );
 
-        /*
-         * Rebuild controls once to replace Start
-         * with Pause.
-         *
-         * The DOM will not be rebuilt every tick.
-         */
+
+        saveTimers();
         renderTimerList();
-
         startTicker();
     }
 
@@ -229,25 +547,27 @@
         const timer =
             timers.get(id);
 
-        if (!timer) {
+
+        if (
+            !timer ||
+            !timer.running
+        ) {
             return;
         }
 
-        /*
-         * Capture the current accurate remaining
-         * time before removing the end timestamp.
-         */
+
         timer.remainingSeconds =
-            calculateRemainingSeconds(timer);
+            calculateRemainingSeconds(
+                timer
+            );
+
 
         timer.running = false;
         timer.endsAt = null;
 
-        /*
-         * Rebuild once to replace Pause with Start.
-         */
-        renderTimerList();
 
+        saveTimers();
+        renderTimerList();
         stopTickerIfIdle();
     }
 
@@ -256,9 +576,11 @@
         const timer =
             timers.get(id);
 
+
         if (!timer) {
             return;
         }
+
 
         timer.remainingSeconds =
             timer.totalSeconds;
@@ -268,46 +590,61 @@
         timer.finished = false;
         timer.alarmPlayed = false;
 
-        renderTimerList();
 
+        saveTimers();
+        renderTimerList();
         stopTickerIfIdle();
     }
 
 
     function removeTimer(id) {
+        if (!timers.has(id)) {
+            return;
+        }
+
+
         timers.delete(id);
 
-        renderTimerList();
 
+        saveTimers();
+        renderTimerList();
         stopTickerIfIdle();
     }
 
 
-    function finishTimer(timer) {
+    function finishTimer(
+        timer,
+        shouldAlarm = true
+    ) {
         timer.remainingSeconds = 0;
         timer.endsAt = null;
         timer.running = false;
         timer.finished = true;
 
-        if (!timer.alarmPlayed) {
+
+        if (
+            shouldAlarm &&
+            !timer.alarmPlayed
+        ) {
             timer.alarmPlayed = true;
 
             playAlarm();
+        } else {
+            timer.alarmPlayed = true;
         }
+
+
+        saveTimers();
     }
 
 
-    /*
-     * One shared ticker updates every running timer.
-     *
-     * The ticker updates only the displayed text.
-     * It does not recreate buttons during normal
-     * countdown operation.
-     */
     function startTicker() {
-        if (tickerIntervalId !== null) {
+        if (
+            tickerIntervalId !== null
+        ) {
             return;
         }
+
 
         tickerIntervalId =
             window.setInterval(
@@ -318,13 +655,17 @@
 
 
     function stopTicker() {
-        if (tickerIntervalId === null) {
+        if (
+            tickerIntervalId === null
+        ) {
             return;
         }
+
 
         window.clearInterval(
             tickerIntervalId
         );
+
 
         tickerIntervalId = null;
     }
@@ -334,9 +675,11 @@
         const hasRunningTimer =
             Array.from(
                 timers.values()
-            ).some(timer =>
-                timer.running
+            ).some(
+                timer =>
+                    timer.running
             );
+
 
         if (!hasRunningTimer) {
             stopTicker();
@@ -346,70 +689,85 @@
 
     function updateRunningTimers() {
         let stateChanged = false;
+        let storageChanged = false;
+
 
         timers.forEach(timer => {
             if (!timer.running) {
                 return;
             }
 
+
             const previousSeconds =
                 timer.remainingSeconds;
+
 
             timer.remainingSeconds =
                 calculateRemainingSeconds(
                     timer
                 );
 
+
             if (
                 timer.remainingSeconds <= 0
             ) {
-                finishTimer(timer);
+                finishTimer(
+                    timer,
+                    true
+                );
 
                 stateChanged = true;
 
                 return;
             }
 
-            /*
-             * Update only when the visible second
-             * has changed.
-             */
+
             if (
                 timer.remainingSeconds !==
                 previousSeconds
             ) {
-                updateTimerDisplay(timer);
+                updateTimerDisplay(
+                    timer
+                );
+
+                storageChanged = true;
             }
         });
 
+
         /*
-         * A finished timer needs new controls and
-         * finished-state styling, so rebuild only
-         * when a state transition occurs.
+         * Persist visible remaining time periodically
+         * as well as on state changes.
+         *
+         * Running timers still restore from endsAt,
+         * so this is mostly useful as human-readable
+         * consistency in the stored state.
          */
+        if (storageChanged) {
+            saveTimers();
+        }
+
+
         if (stateChanged) {
             renderTimerList();
         }
+
 
         stopTickerIfIdle();
     }
 
 
-    /*
-     * Update only text in an existing timer card.
-     *
-     * The buttons remain mounted and stable, which
-     * prevents touchscreen taps from being lost.
-     */
     function updateTimerDisplay(timer) {
         const timerElement =
             document.querySelector(
                 `.timer-item[data-id="${timer.id}"]`
             );
 
+
         if (!timerElement) {
             return;
         }
+
 
         const timeElement =
             timerElement.querySelector(
@@ -421,6 +779,7 @@
                 '.timer-status'
             );
 
+
         if (timeElement) {
             timeElement.textContent =
                 formatTime(
@@ -428,13 +787,12 @@
                 );
         }
 
+
         if (statusElement) {
             statusElement.textContent =
-                timer.finished
-                    ? 'FINISHED!'
-                    : timer.running
-                        ? 'Running'
-                        : 'Paused';
+                getTimerStatus(
+                    timer
+                );
         }
     }
 
@@ -451,9 +809,9 @@
                 );
 
                 triggerVibration();
-
                 return;
             }
+
 
             if (
                 sharedAudioContext.state ===
@@ -469,6 +827,7 @@
                     });
             }
 
+
             const beepTimes = [
                 0,
                 0.45,
@@ -476,59 +835,75 @@
                 1.35
             ];
 
+
             beepTimes.forEach(
                 startOffset => {
+
                     const oscillator =
                         sharedAudioContext
                             .createOscillator();
+
 
                     const gainNode =
                         sharedAudioContext
                             .createGain();
 
+
                     oscillator.connect(
                         gainNode
                     );
+
 
                     gainNode.connect(
                         sharedAudioContext
                             .destination
                     );
 
+
                     oscillator.frequency.value =
                         880;
 
+
                     oscillator.type =
                         'sine';
+
 
                     const startTime =
                         sharedAudioContext
                             .currentTime +
                         startOffset;
 
+
                     const stopTime =
                         startTime +
                         0.28;
 
-                    gainNode.gain.setValueAtTime(
-                        0.32,
-                        startTime
-                    );
 
-                    gainNode.gain.exponentialRampToValueAtTime(
-                        0.01,
-                        stopTime
-                    );
+                    gainNode.gain
+                        .setValueAtTime(
+                            0.32,
+                            startTime
+                        );
+
+
+                    gainNode.gain
+                        .exponentialRampToValueAtTime(
+                            0.01,
+                            stopTime
+                        );
+
 
                     oscillator.start(
                         startTime
                     );
+
 
                     oscillator.stop(
                         stopTime
                     );
                 }
             );
+
 
             triggerVibration();
 
@@ -544,7 +919,9 @@
 
 
     function triggerVibration() {
-        if ('vibrate' in navigator) {
+        if (
+            'vibrate' in navigator
+        ) {
             navigator.vibrate([
                 250,
                 150,
@@ -575,16 +952,21 @@
                 'timer-list'
             );
 
+
         if (!container) {
             return;
         }
+
 
         const timerArray =
             Array.from(
                 timers.values()
             );
 
-        if (timerArray.length === 0) {
+
+        if (
+            timerArray.length === 0
+        ) {
             container.innerHTML = `
                 <p class="timer-empty">
                     No active timers.
@@ -594,14 +976,11 @@
             return;
         }
 
+
         let html = '';
 
+
         timerArray.forEach(timer => {
-            /*
-             * Refresh the value before rendering,
-             * but do not repeatedly redraw after
-             * the card has been inserted.
-             */
             if (timer.running) {
                 timer.remainingSeconds =
                     calculateRemainingSeconds(
@@ -609,26 +988,35 @@
                     );
             }
 
+
             const timeDisplay =
                 formatTime(
                     timer.remainingSeconds
                 );
+
 
             const statusClass =
                 timer.finished
                     ? 'finished'
                     : '';
 
+
             const statusText =
-                getTimerStatus(timer);
+                getTimerStatus(
+                    timer
+                );
+
 
             html += `
                 <div
                     class="timer-item ${statusClass}"
                     data-id="${timer.id}"
                 >
+
                     <div class="timer-name">
-                        ${escapeHtml(timer.name)}
+                        ${escapeHtml(
+                            timer.name
+                        )}
                     </div>
 
                     <div class="timer-time">
@@ -641,6 +1029,7 @@
 
                     <div class="timer-controls">
             `;
+
 
             if (
                 !timer.running &&
@@ -658,6 +1047,7 @@
                 `;
             }
 
+
             if (timer.running) {
                 html += `
                     <button
@@ -670,6 +1060,7 @@
                     </button>
                 `;
             }
+
 
             if (!timer.running) {
                 html += `
@@ -684,6 +1075,7 @@
                 `;
             }
 
+
             html += `
                         <button
                             class="btn timer-remove"
@@ -693,10 +1085,12 @@
                         >
                             Remove
                         </button>
+
                     </div>
                 </div>
             `;
         });
+
 
         container.innerHTML =
             html;
@@ -719,6 +1113,7 @@
                 'timer-seconds'
             );
 
+
         if (
             !hoursInput ||
             !minutesInput ||
@@ -727,41 +1122,57 @@
             return;
         }
 
+
         let hours =
-            parseInt(
+            Number.parseInt(
                 hoursInput.value,
                 10
             ) || 0;
 
+
         let minutes =
-            parseInt(
+            Number.parseInt(
                 minutesInput.value,
                 10
             ) || 0;
 
+
         let seconds =
-            parseInt(
+            Number.parseInt(
                 secondsInput.value,
                 10
             ) || 0;
 
+
         hours =
             Math.max(
                 0,
-                Math.min(24, hours)
+                Math.min(
+                    24,
+                    hours
+                )
             );
+
 
         minutes =
             Math.max(
                 0,
-                Math.min(59, minutes)
+                Math.min(
+                    59,
+                    minutes
+                )
             );
+
 
         seconds =
             Math.max(
                 0,
-                Math.min(59, seconds)
+                Math.min(
+                    59,
+                    seconds
+                )
             );
+
 
         hoursInput.value =
             hours;
@@ -795,6 +1206,7 @@
                 'timer-seconds'
             );
 
+
         if (
             !nameInput ||
             !hoursInput ||
@@ -804,43 +1216,47 @@
             return;
         }
 
-        /*
-         * Unlock audio while handling the user's
-         * Start New Timer tap.
-         */
+
         await unlockAudio();
 
         clampDurationInputs();
 
+
         const name =
             nameInput.value.trim();
 
+
         const hours =
-            parseInt(
+            Number.parseInt(
                 hoursInput.value,
                 10
             ) || 0;
 
+
         const minutes =
-            parseInt(
+            Number.parseInt(
                 minutesInput.value,
                 10
             ) || 0;
 
+
         const seconds =
-            parseInt(
+            Number.parseInt(
                 secondsInput.value,
                 10
             ) || 0;
+
 
         const totalSeconds =
             (hours * 3600) +
             (minutes * 60) +
             seconds;
 
+
         if (totalSeconds <= 0) {
             return;
         }
+
 
         const id =
             addTimer(
@@ -848,11 +1264,14 @@
                 totalSeconds
             );
 
+
         if (id === null) {
             return;
         }
 
+
         await startTimer(id);
+
 
         nameInput.value = '';
     }
@@ -874,6 +1293,7 @@
                 'timer-seconds'
             );
 
+
         if (
             !hoursInput ||
             !minutesInput ||
@@ -882,66 +1302,87 @@
             return;
         }
 
+
         hoursInput.value =
             Math.floor(
                 minutes / 60
             );
 
+
         minutesInput.value =
             minutes % 60;
+
 
         secondsInput.value =
             0;
     }
 
 
-    /*
-     * Recalculate timers immediately when returning
-     * from a background tab or locked screen.
-     */
     function refreshRunningTimers() {
         let stateChanged = false;
+
 
         timers.forEach(timer => {
             if (!timer.running) {
                 return;
             }
 
+
             timer.remainingSeconds =
                 calculateRemainingSeconds(
                     timer
                 );
 
+
             if (
                 timer.remainingSeconds <= 0
             ) {
-                finishTimer(timer);
+                /*
+                 * The page is currently active,
+                 * so an alarm is appropriate.
+                 */
+                finishTimer(
+                    timer,
+                    true
+                );
 
                 stateChanged = true;
 
                 return;
             }
 
-            updateTimerDisplay(timer);
+
+            updateTimerDisplay(
+                timer
+            );
         });
+
+
+        saveTimers();
+
 
         if (stateChanged) {
             renderTimerList();
         }
 
+
         stopTickerIfIdle();
     }
 
 
-    function handleTimerControlClick(event) {
+    function handleTimerControlClick(
+        event
+    ) {
         const button =
             event.target.closest(
                 '[data-action][data-timer-id]'
             );
 
+
         if (!button) {
             return;
         }
+
 
         const timerId =
             Number.parseInt(
@@ -949,28 +1390,43 @@
                 10
             );
 
-        if (!Number.isInteger(timerId)) {
+
+        if (
+            !Number.isInteger(
+                timerId
+            )
+        ) {
             return;
         }
+
 
         const action =
             button.dataset.action;
 
+
         switch (action) {
             case 'start':
-                startTimer(timerId);
+                startTimer(
+                    timerId
+                );
                 break;
 
             case 'pause':
-                stopTimer(timerId);
+                stopTimer(
+                    timerId
+                );
                 break;
 
             case 'reset':
-                resetTimer(timerId);
+                resetTimer(
+                    timerId
+                );
                 break;
 
             case 'remove':
-                removeTimer(timerId);
+                removeTimer(
+                    timerId
+                );
                 break;
 
             default:
@@ -990,6 +1446,7 @@
                 'timer-list'
             );
 
+
         if (addTimerButton) {
             addTimerButton.addEventListener(
                 'click',
@@ -997,16 +1454,14 @@
             );
         }
 
-        /*
-         * One stable delegated click handler handles
-         * every timer button.
-         */
+
         if (timerList) {
             timerList.addEventListener(
                 'click',
                 handleTimerControlClick
             );
         }
+
 
         document
             .querySelectorAll(
@@ -1018,6 +1473,7 @@
                     async () => {
                         await unlockAudio();
 
+
                         const minutes =
                             Number.parseInt(
                                 button.dataset
@@ -1025,16 +1481,20 @@
                                 10
                             );
 
+
                         if (
                             Number.isInteger(
                                 minutes
                             )
                         ) {
-                            setPreset(minutes);
+                            setPreset(
+                                minutes
+                            );
                         }
                     }
                 );
             });
+
 
         [
             'timer-hours',
@@ -1042,7 +1502,10 @@
             'timer-seconds'
         ].forEach(id => {
             const input =
-                document.getElementById(id);
+                document.getElementById(
+                    id
+                );
+
 
             if (input) {
                 input.addEventListener(
@@ -1051,6 +1514,7 @@
                 );
             }
         });
+
 
         document.addEventListener(
             'visibilitychange',
@@ -1061,20 +1525,39 @@
             }
         );
 
+
         window.addEventListener(
             'focus',
             refreshRunningTimers
         );
 
+
         window.addEventListener(
             'pageshow',
             refreshRunningTimers
         );
+
+
+        /*
+         * Save the latest state if the browser is
+         * navigating away.
+         */
+        window.addEventListener(
+            'pagehide',
+            saveTimers
+        );
     }
+
+
+    /*
+     * Restore saved timers before the first render.
+     */
+    restoreTimers();
 
 
     window.kitchenApp =
         window.kitchenApp || {};
+
 
     window.kitchenApp.timers = {
         addTimer,
@@ -1086,9 +1569,27 @@
         createTimerFromForm,
         setPreset,
         refreshRunningTimers,
-        unlockAudio
+        unlockAudio,
+        saveTimers
     };
+
 
     initializeTimerControls();
     renderTimerList();
+
+
+    /*
+     * Resume ticker only when at least one restored
+     * timer is still actively running.
+     */
+    if (
+        Array.from(
+            timers.values()
+        ).some(
+            timer =>
+                timer.running
+        )
+    ) {
+        startTicker();
+    }
 })();
