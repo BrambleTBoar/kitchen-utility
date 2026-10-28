@@ -1,0 +1,32 @@
+{
+  "all-purpose flour": {
+    "gramsPerCup": 120
+  },
+  "bread flour": {
+    "gramsPerCup": 120
+  },
+  "cake flour": {
+    "gramsPerCup": 114
+  },
+  "granulated sugar": {
+    "gramsPerCup": 200
+  },
+  "brown sugar": {
+    "gramsPerCup": 213
+  },
+  "powdered sugar": {
+    "gramsPerCup": 113
+  },
+  "butter": {
+    "gramsPerCup": 227
+  },
+  "honey": {
+    "gramsPerCup": 340
+  },
+  "water": {
+    "gramsPerCup": 237
+  },
+  "milk": {
+    "gramsPerCup": 245
+  }
+}

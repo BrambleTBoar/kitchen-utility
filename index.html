@@ -19,6 +19,7 @@
         <button class="tab" data-tab="timer" role="tab" aria-selected="false">Timer</button>
         <button class="tab" data-tab="converter" role="tab" aria-selected="false">Converter</button>
         <button class="tab" data-tab="substitutions" role="tab" aria-selected="false">Substitutions</button>
+	<button class="tab" data-tab="ingredient-weights" role="tab" aria-selected="false">Ingredient Weights</button>
     </nav>
     <main>
         <section id="dough" class="tool-panel active" role="tabpanel">
@@ -89,12 +90,29 @@
             </div>
             <div id="sub-results" class="results"></div>
         </section>
+	<section id="ingredient-weights" class="tool-panel" role="tabpanel" hidden>
+    	    <h2>Ingredient Weights</h2>
+   	    <p>Convert common cooking ingredients from cups to approximate weight.</p>
+
+	    <div class="form-group">
+       	 	<label for="weight-ingredient">Ingredient</label>
+       	 	<select id="weight-ingredient"></select>
+   	 </div>
+
+   	 <div class="form-group">
+        	<label for="weight-amount">Cups</label>
+       	 <input type="number" id="weight-amount" value="1" min="0" step="0.25">
+   	 </div>
+
+	    <div id="weight-results" class="results"></div>
+	</section>
     </main>
     <script src="js/dough.js"></script>
     <script src="js/scaler.js"></script>
     <script src="js/timer.js"></script>
     <script src="js/converter.js"></script>
     <script src="js/substitutions.js"></script>
+    <script src="js/ingredient-weights.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
