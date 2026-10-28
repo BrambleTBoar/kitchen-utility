@@ -1,67 +1,357 @@
 // js/dough.js
 
-function calculateDough(flour, hydration, salt, starter) {
-    hydration = hydration || 0;
-    salt = salt || 0;
-    starter = starter || 0;
+(() => {
+    /*
+     * Calculate a dough formula using baker's
+     * percentages.
+     *
+     * Flour is the base weight.
+     *
+     * Hydration, salt, and starter are expressed
+     * as percentages of flour weight.
+     */
+    function calculateDough(
+        flour,
+        hydration,
+        salt,
+        starter
+    ) {
+        if (
+            !Number.isFinite(flour) ||
+            flour <= 0
+        ) {
+            return null;
+        }
 
-    const waterFromHydration = flour * (hydration / 100);
-    const saltGrams = flour * (salt / 100);
+        const safeHydration =
+            Number.isFinite(hydration)
+                ? Math.max(0, hydration)
+                : 0;
 
-    let starterFlour = 0;
-    let starterWater = 0;
+        const safeSalt =
+            Number.isFinite(salt)
+                ? Math.max(0, salt)
+                : 0;
 
-    if (starter > 0) {
-        // Assume 100% hydration starter (50% flour, 50% water by weight)
-        const starterTotal = flour * (starter / 100);
-        starterFlour = starterTotal * 0.5;
-        starterWater = starterTotal * 0.5;
+        const safeStarter =
+            Number.isFinite(starter)
+                ? Math.max(0, starter)
+                : 0;
+
+
+        const water =
+            flour *
+            (safeHydration / 100);
+
+        const saltWeight =
+            flour *
+            (safeSalt / 100);
+
+        const starterWeight =
+            flour *
+            (safeStarter / 100);
+
+        const total =
+            flour +
+            water +
+            saltWeight +
+            starterWeight;
+
+
+        return {
+            flour,
+            water,
+            salt: saltWeight,
+            starter: starterWeight,
+            total,
+            hydration: safeHydration,
+            saltPercentage: safeSalt,
+            starterPercentage: safeStarter
+        };
     }
 
-    const water = waterFromHydration - starterWater;
-    const totalFlour = flour - starterFlour;
-    const totalStarter = starterTotal || 0;
 
-    return {
-        flour: Math.round(totalFlour),
-        water: Math.round(water * 10) / 10,
-        salt: Math.round(saltGrams * 10) / 10,
-        starter: Math.round(totalStarter * 10) / 10,
-        total: Math.round((totalFlour + water + saltGrams + totalStarter) * 10) / 10
+    /*
+     * Format gram values cleanly without showing
+     * unnecessary trailing zeroes.
+     */
+    function formatGrams(value) {
+        if (!Number.isFinite(value)) {
+            return '0';
+        }
+
+        if (
+            Math.abs(
+                value -
+                Math.round(value)
+            ) < 0.005
+        ) {
+            return String(
+                Math.round(value)
+            );
+        }
+
+        return parseFloat(
+            value.toFixed(1)
+        ).toString();
+    }
+
+
+    /*
+     * Read input values and update the result card.
+     */
+    function renderDoughResults() {
+        const flourInput =
+            document.getElementById(
+                'flour'
+            );
+
+        const hydrationInput =
+            document.getElementById(
+                'hydration'
+            );
+
+        const saltInput =
+            document.getElementById(
+                'salt'
+            );
+
+        const starterInput =
+            document.getElementById(
+                'starter'
+            );
+
+        const results =
+            document.getElementById(
+                'dough-results'
+            );
+
+
+        if (
+            !flourInput ||
+            !hydrationInput ||
+            !saltInput ||
+            !starterInput ||
+            !results
+        ) {
+            return;
+        }
+
+
+        const flour =
+            parseFloat(
+                flourInput.value
+            );
+
+        const hydration =
+            parseFloat(
+                hydrationInput.value
+            );
+
+        const salt =
+            parseFloat(
+                saltInput.value
+            );
+
+        const starter =
+            parseFloat(
+                starterInput.value
+            );
+
+
+        if (
+            !Number.isFinite(flour) ||
+            flour <= 0
+        ) {
+            results.innerHTML = `
+                <p>
+                    Enter a flour amount greater
+                    than zero.
+                </p>
+            `;
+
+            return;
+        }
+
+
+        if (
+            !Number.isFinite(hydration) ||
+            hydration < 0 ||
+            !Number.isFinite(salt) ||
+            salt < 0 ||
+            !Number.isFinite(starter) ||
+            starter < 0
+        ) {
+            results.innerHTML = `
+                <p>
+                    Enter valid non-negative
+                    percentages.
+                </p>
+            `;
+
+            return;
+        }
+
+
+        const result =
+            calculateDough(
+                flour,
+                hydration,
+                salt,
+                starter
+            );
+
+
+        if (!result) {
+            results.innerHTML = `
+                <p>
+                    Unable to calculate the dough.
+                </p>
+            `;
+
+            return;
+        }
+
+
+        results.innerHTML = `
+            <div class="dough-result-list">
+
+                <p>
+                    <strong>Flour:</strong>
+                    ${formatGrams(
+                        result.flour
+                    )} g
+                </p>
+
+                <p>
+                    <strong>Water:</strong>
+                    ${formatGrams(
+                        result.water
+                    )} g
+                </p>
+
+                <p>
+                    <strong>Salt:</strong>
+                    ${formatGrams(
+                        result.salt
+                    )} g
+                </p>
+
+                <p>
+                    <strong>Starter:</strong>
+                    ${formatGrams(
+                        result.starter
+                    )} g
+                </p>
+
+                <p>
+                    <strong>Total dough:</strong>
+                    ${formatGrams(
+                        result.total
+                    )} g
+                </p>
+
+            </div>
+
+            <div class="dough-formula-summary">
+
+                <p>
+                    <strong>Baker's percentages</strong>
+                </p>
+
+                <p>
+                    Flour: 100%
+                </p>
+
+                <p>
+                    Water:
+                    ${result.hydration}%
+                </p>
+
+                <p>
+                    Salt:
+                    ${result.saltPercentage}%
+                </p>
+
+                <p>
+                    Starter:
+                    ${result.starterPercentage}%
+                </p>
+
+            </div>
+        `;
+    }
+
+
+    /*
+     * Initialize the Dough Calculator controls.
+     */
+    function initializeDoughCalculator() {
+        const inputIds = [
+            'flour',
+            'hydration',
+            'salt',
+            'starter'
+        ];
+
+
+        inputIds.forEach(id => {
+            const input =
+                document.getElementById(id);
+
+            if (!input) {
+                console.warn(
+                    `Dough calculator input not found: ${id}`
+                );
+
+                return;
+            }
+
+
+            input.addEventListener(
+                'input',
+                renderDoughResults
+            );
+
+
+            input.addEventListener(
+                'change',
+                renderDoughResults
+            );
+        });
+
+
+        renderDoughResults();
+    }
+
+
+    /*
+     * Share only the public Dough Calculator API.
+     *
+     * calculateDough is useful for future testing
+     * without exposing internal helper functions
+     * such as formatGrams.
+     */
+    window.kitchenApp =
+        window.kitchenApp || {};
+
+
+    window.kitchenApp.dough = {
+        calculateDough,
+        renderDoughResults
     };
-}
 
-function renderDoughResults() {
-    const flour = parseFloat(document.getElementById('flour').value) || 0;
-    const hydration = parseFloat(document.getElementById('hydration').value) || 0;
-    const salt = parseFloat(document.getElementById('salt').value) || 0;
-    const starter = parseFloat(document.getElementById('starter').value) || 0;
 
-    const result = calculateDough(flour, hydration, salt, starter);
-    const container = document.getElementById('dough-results');
+    /*
+     * Preserve backward compatibility with the
+     * original project's global if other existing
+     * code references it.
+     */
+    window.doughCalc = {
+        calculateDough,
+        renderDoughResults
+    };
 
-    let html = `<p><strong>Flour:</strong> ${result.flour}g</p>`;
-    html += `<p><strong>Water:</strong> ${result.water}g</p>`;
-    html += `<p><strong>Salt:</strong> ${result.salt}g</p>`;
-    if (result.starter > 0) {
-        html += `<p><strong>Starter:</strong> ${result.starter}g (100% hydration)</p>`;
-    }
-    html += `<p><strong>Total dough:</strong> ${result.total}g</p>`;
-    container.innerHTML = html;
-}
 
-const flourInput = document.getElementById('flour');
-const hydrationInput = document.getElementById('hydration');
-const saltInput = document.getElementById('salt');
-const starterInput = document.getElementById('starter');
-
-flourInput.addEventListener('input', renderDoughResults);
-hydrationInput.addEventListener('input', renderDoughResults);
-saltInput.addEventListener('input', renderDoughResults);
-starterInput.addEventListener('input', renderDoughResults);
-
-// Initial calculation
-renderDoughResults();
-
-// Expose for testing
-window.doughCalc = { calculateDough, renderDoughResults };
+    initializeDoughCalculator();
+})();
