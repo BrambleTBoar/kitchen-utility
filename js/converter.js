@@ -1,113 +1,791 @@
 // js/converter.js
 
-const conversions = {
-    temperature: {
-        units: ['°C', '°F', 'K'],
-        toKelvin: {
-            '°C': v => v + 273.15,
-            '°F': v => (v - 32) * 5/9 + 273.15,
-            'K': v => v
+(() => {
+    /*
+     * Each non-temperature unit is represented by a
+     * multiplier relative to its category's base unit.
+     *
+     * Volume base unit: milliliters
+     * Weight base unit: grams
+     */
+    const conversions = {
+        temperature: {
+            celsius: {
+                label: 'Celsius (°C)'
+            },
+            fahrenheit: {
+                label: 'Fahrenheit (°F)'
+            },
+            kelvin: {
+                label: 'Kelvin (K)'
+            }
         },
-        fromKelvin: {
-            '°C': v => v - 273.15,
-            '°F': v => (v - 273.15) * 9/5 + 32,
-            'K': v => v
+
+        volume: {
+            ml: {
+                label: 'Milliliters (mL)',
+                factor: 1
+            },
+            l: {
+                label: 'Liters (L)',
+                factor: 1000
+            },
+            tsp: {
+                label: 'Teaspoons (tsp)',
+                factor: 4.92892
+            },
+            tbsp: {
+                label: 'Tablespoons (tbsp)',
+                factor: 14.7868
+            },
+            floz: {
+                label: 'Fluid Ounces (fl oz)',
+                factor: 29.5735
+            },
+            cup: {
+                label: 'Cups',
+                factor: 236.588
+            },
+            pint: {
+                label: 'Pints (US)',
+                factor: 473.176
+            },
+            quart: {
+                label: 'Quarts (US)',
+                factor: 946.353
+            },
+            gallon: {
+                label: 'Gallons (US)',
+                factor: 3785.41
+            }
+        },
+
+        weight: {
+            g: {
+                label: 'Grams (g)',
+                factor: 1
+            },
+            kg: {
+                label: 'Kilograms (kg)',
+                factor: 1000
+            },
+            oz: {
+                label: 'Ounces (oz)',
+                factor: 28.3495
+            },
+            lb: {
+                label: 'Pounds (lb)',
+                factor: 453.592
+            }
         }
-    },
-    volume: {
-        units: ['ml', 'l', 'cup', 'tbsp', 'tsp', 'fl oz'],
-        toMl: {
-            'ml': v => v,
-            'l': v => v * 1000,
-            'cup': v => v * 236.588,
-            'tbsp': v => v * 14.787,
-            'tsp': v => v * 4.929,
-            'fl oz': v => v * 29.574
-        },
-        fromMl: {
-            'ml': v => v,
-            'l': v => v / 1000,
-            'cup': v => v / 236.588,
-            'tbsp': v => v / 14.787,
-            'tsp': v => v / 4.929,
-            'fl oz': v => v / 29.574
+    };
+
+
+    let currentType =
+        'temperature';
+
+
+    /*
+     * Temperature requires formulas rather than
+     * simple multiplication factors.
+     */
+    function convertTemperature(
+        value,
+        from,
+        to
+    ) {
+        if (!Number.isFinite(value)) {
+            return Number.NaN;
         }
-    },
-    weight: {
-        units: ['g', 'kg', 'oz', 'lb'],
-        toGrams: {
-            'g': v => v,
-            'kg': v => v * 1000,
-            'oz': v => v * 28.3495,
-            'lb': v => v * 453.592
-        },
-        fromGrams: {
-            'g': v => v,
-            'kg': v => v / 1000,
-            'oz': v => v / 28.3495,
-            'lb': v => v / 453.592
+
+        if (
+            !conversions.temperature[from] ||
+            !conversions.temperature[to]
+        ) {
+            return Number.NaN;
+        }
+
+        if (from === to) {
+            return value;
+        }
+
+
+        /*
+         * Normalize to Celsius first.
+         */
+        let celsius;
+
+        switch (from) {
+            case 'celsius':
+                celsius =
+                    value;
+                break;
+
+            case 'fahrenheit':
+                celsius =
+                    (value - 32) *
+                    (5 / 9);
+                break;
+
+            case 'kelvin':
+                celsius =
+                    value -
+                    273.15;
+                break;
+
+            default:
+                return Number.NaN;
+        }
+
+
+        /*
+         * Convert Celsius into the requested unit.
+         */
+        switch (to) {
+            case 'celsius':
+                return celsius;
+
+            case 'fahrenheit':
+                return (
+                    celsius *
+                    (9 / 5)
+                ) + 32;
+
+            case 'kelvin':
+                return (
+                    celsius +
+                    273.15
+                );
+
+            default:
+                return Number.NaN;
         }
     }
-};
 
-let currentType = 'temperature';
 
-function populateSelects() {
-    const fromSelect = document.getElementById('converter-from');
-    const toSelect = document.getElementById('converter-to');
-    const units = conversions[currentType].units;
+    /*
+     * Convert volume or weight through the
+     * category's base unit.
+     */
+    function convertByFactor(
+        value,
+        from,
+        to,
+        category
+    ) {
+        if (!Number.isFinite(value)) {
+            return Number.NaN;
+        }
 
-    fromSelect.innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
-    toSelect.innerHTML = units.map(u => `<option value="${u}">${u}</option>`).join('');
 
-    // Default "from" to first unit, "to" to second
-    if (units.length >= 2) {
-        toSelect.value = units[1];
+        const categoryData =
+            conversions[category];
+
+
+        if (!categoryData) {
+            return Number.NaN;
+        }
+
+
+        const fromData =
+            categoryData[from];
+
+        const toData =
+            categoryData[to];
+
+
+        if (
+            !fromData ||
+            !toData ||
+            !Number.isFinite(
+                fromData.factor
+            ) ||
+            !Number.isFinite(
+                toData.factor
+            ) ||
+            fromData.factor <= 0 ||
+            toData.factor <= 0
+        ) {
+            return Number.NaN;
+        }
+
+
+        const baseValue =
+            value *
+            fromData.factor;
+
+
+        return (
+            baseValue /
+            toData.factor
+        );
     }
-}
 
-function convert(value, from, to) {
-    const conv = conversions[currentType];
 
-    if (currentType === 'temperature') {
-        const kelvin = conv.toKelvin[from](value);
-        return conv.fromKelvin[to](kelvin);
-    } else if (currentType === 'volume') {
-        const ml = conv.toMl[from](value);
-        return conv.fromMl[to](ml);
-    } else {
-        const grams = conv.toGrams[from](value);
-        return conv.fromGrams[to](grams);
+    /*
+     * Public conversion function.
+     */
+    function convert(
+        value,
+        from,
+        to,
+        type = currentType
+    ) {
+        if (!Number.isFinite(value)) {
+            return Number.NaN;
+        }
+
+
+        switch (type) {
+            case 'temperature':
+                return convertTemperature(
+                    value,
+                    from,
+                    to
+                );
+
+            case 'volume':
+            case 'weight':
+                return convertByFactor(
+                    value,
+                    from,
+                    to,
+                    type
+                );
+
+            default:
+                return Number.NaN;
+        }
     }
-}
 
-function renderConverter() {
-    const value = parseFloat(document.getElementById('converter-value').value) || 0;
-    const from = document.getElementById('converter-from').value;
-    const to = document.getElementById('converter-to').value;
 
-    const result = convert(value, from, to);
-    const container = document.getElementById('converter-results');
+    /*
+     * Prevent physically impossible temperature
+     * results below absolute zero.
+     */
+    function isValidTemperature(
+        value,
+        unit
+    ) {
+        if (!Number.isFinite(value)) {
+            return false;
+        }
 
-    container.innerHTML = `<p><strong>${value} ${from}</strong> = <strong>${result.toFixed(2)} ${to}</strong></p>`;
-}
 
-document.querySelectorAll('.converter-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.converter-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        currentType = tab.dataset.type;
+        switch (unit) {
+            case 'celsius':
+                return (
+                    value >=
+                    -273.15
+                );
+
+            case 'fahrenheit':
+                return (
+                    value >=
+                    -459.67
+                );
+
+            case 'kelvin':
+                return (
+                    value >= 0
+                );
+
+            default:
+                return false;
+        }
+    }
+
+
+    function formatNumber(value) {
+        if (!Number.isFinite(value)) {
+            return '';
+        }
+
+
+        /*
+         * Very small non-zero values should not
+         * misleadingly display as zero.
+         */
+        const absoluteValue =
+            Math.abs(value);
+
+
+        if (
+            absoluteValue > 0 &&
+            absoluteValue < 0.001
+        ) {
+            return value.toExponential(
+                3
+            );
+        }
+
+
+        if (
+            Math.abs(
+                value -
+                Math.round(value)
+            ) < 0.000001
+        ) {
+            return String(
+                Math.round(value)
+            );
+        }
+
+
+        return String(
+            parseFloat(
+                value.toFixed(4)
+            )
+        );
+    }
+
+
+    function getUnitLabel(
+        type,
+        unit
+    ) {
+        const category =
+            conversions[type];
+
+
+        if (
+            !category ||
+            !category[unit]
+        ) {
+            return unit;
+        }
+
+
+        return (
+            category[unit].label ||
+            unit
+        );
+    }
+
+
+    /*
+     * Populate From and To selects for the chosen
+     * conversion category.
+     */
+    function populateSelects() {
+        const fromSelect =
+            document.getElementById(
+                'converter-from'
+            );
+
+        const toSelect =
+            document.getElementById(
+                'converter-to'
+            );
+
+
+        if (
+            !fromSelect ||
+            !toSelect
+        ) {
+            return;
+        }
+
+
+        const category =
+            conversions[currentType];
+
+
+        if (!category) {
+            return;
+        }
+
+
+        const previousFrom =
+            fromSelect.value;
+
+        const previousTo =
+            toSelect.value;
+
+
+        fromSelect.replaceChildren();
+        toSelect.replaceChildren();
+
+
+        Object.entries(
+            category
+        ).forEach(
+            ([unit, unitData]) => {
+                const fromOption =
+                    document.createElement(
+                        'option'
+                    );
+
+                fromOption.value =
+                    unit;
+
+                fromOption.textContent =
+                    unitData.label;
+
+
+                const toOption =
+                    document.createElement(
+                        'option'
+                    );
+
+                toOption.value =
+                    unit;
+
+                toOption.textContent =
+                    unitData.label;
+
+
+                fromSelect.appendChild(
+                    fromOption
+                );
+
+                toSelect.appendChild(
+                    toOption
+                );
+            }
+        );
+
+
+        const units =
+            Object.keys(category);
+
+
+        /*
+         * Restore previous selections if they
+         * belong to this category.
+         */
+        if (
+            units.includes(
+                previousFrom
+            )
+        ) {
+            fromSelect.value =
+                previousFrom;
+        } else {
+            fromSelect.value =
+                units[0];
+        }
+
+
+        if (
+            units.includes(
+                previousTo
+            )
+        ) {
+            toSelect.value =
+                previousTo;
+        } else {
+            toSelect.value =
+                units[1] ||
+                units[0];
+        }
+    }
+
+
+    function renderConverter() {
+        const valueInput =
+            document.getElementById(
+                'converter-value'
+            );
+
+        const fromSelect =
+            document.getElementById(
+                'converter-from'
+            );
+
+        const toSelect =
+            document.getElementById(
+                'converter-to'
+            );
+
+        const results =
+            document.getElementById(
+                'converter-results'
+            );
+
+
+        if (
+            !valueInput ||
+            !fromSelect ||
+            !toSelect ||
+            !results
+        ) {
+            return;
+        }
+
+
+        const rawValue =
+            valueInput.value.trim();
+
+
+        if (rawValue === '') {
+            results.innerHTML = `
+                <p>
+                    Enter a value to convert.
+                </p>
+            `;
+
+            return;
+        }
+
+
+        const value =
+            Number.parseFloat(
+                rawValue
+            );
+
+        const from =
+            fromSelect.value;
+
+        const to =
+            toSelect.value;
+
+
+        if (!Number.isFinite(value)) {
+            results.innerHTML = `
+                <p>
+                    Enter a valid number.
+                </p>
+            `;
+
+            return;
+        }
+
+
+        if (
+            currentType ===
+                'temperature' &&
+            !isValidTemperature(
+                value,
+                from
+            )
+        ) {
+            results.innerHTML = `
+                <p>
+                    That temperature is below
+                    absolute zero.
+                </p>
+            `;
+
+            return;
+        }
+
+
+        const convertedValue =
+            convert(
+                value,
+                from,
+                to,
+                currentType
+            );
+
+
+        if (
+            !Number.isFinite(
+                convertedValue
+            )
+        ) {
+            results.innerHTML = `
+                <p>
+                    Unable to perform this conversion.
+                </p>
+            `;
+
+            return;
+        }
+
+
+        const fromLabel =
+            getUnitLabel(
+                currentType,
+                from
+            );
+
+        const toLabel =
+            getUnitLabel(
+                currentType,
+                to
+            );
+
+
+        results.innerHTML = `
+            <p>
+                <strong>
+                    ${formatNumber(value)}
+                    ${fromLabel}
+                </strong>
+            </p>
+
+            <p>
+                =
+            </p>
+
+            <p>
+                <strong>
+                    ${formatNumber(
+                        convertedValue
+                    )}
+                    ${toLabel}
+                </strong>
+            </p>
+        `;
+    }
+
+
+    function setConverterType(type) {
+        if (!conversions[type]) {
+            console.warn(
+                `Unknown converter type: ${type}`
+            );
+
+            return false;
+        }
+
+
+        currentType =
+            type;
+
+
+        document
+            .querySelectorAll(
+                '.converter-tab'
+            )
+            .forEach(tab => {
+                const isActive =
+                    tab.dataset.type ===
+                    type;
+
+
+                tab.classList.toggle(
+                    'active',
+                    isActive
+                );
+
+
+                tab.setAttribute(
+                    'aria-selected',
+                    isActive
+                        ? 'true'
+                        : 'false'
+                );
+            });
+
+
         populateSelects();
         renderConverter();
-    });
-});
 
-document.getElementById('converter-value').addEventListener('input', renderConverter);
-document.getElementById('converter-from').addEventListener('change', renderConverter);
-document.getElementById('converter-to').addEventListener('change', renderConverter);
 
-populateSelects();
-renderConverter();
+        return true;
+    }
 
-// Expose for testing
-window.unitConverter = { convert, renderConverter, setConverterType: (t) => { currentType = t; populateSelects(); renderConverter(); } };
+
+    function initializeConverter() {
+        const valueInput =
+            document.getElementById(
+                'converter-value'
+            );
+
+        const fromSelect =
+            document.getElementById(
+                'converter-from'
+            );
+
+        const toSelect =
+            document.getElementById(
+                'converter-to'
+            );
+
+        const results =
+            document.getElementById(
+                'converter-results'
+            );
+
+
+        if (
+            !valueInput ||
+            !fromSelect ||
+            !toSelect ||
+            !results
+        ) {
+            console.error(
+                'Unit Converter elements were not found.'
+            );
+
+            return;
+        }
+
+
+        document
+            .querySelectorAll(
+                '.converter-tab'
+            )
+            .forEach(tab => {
+                tab.addEventListener(
+                    'click',
+                    () => {
+                        const type =
+                            tab.dataset.type;
+
+
+                        if (type) {
+                            setConverterType(
+                                type
+                            );
+                        }
+                    }
+                );
+            });
+
+
+        valueInput.addEventListener(
+            'input',
+            renderConverter
+        );
+
+
+        fromSelect.addEventListener(
+            'change',
+            renderConverter
+        );
+
+
+        toSelect.addEventListener(
+            'change',
+            renderConverter
+        );
+
+
+        populateSelects();
+        renderConverter();
+    }
+
+
+    /*
+     * Expose only the intentional public converter
+     * API. All conversion tables and helper
+     * functions remain private.
+     */
+    window.kitchenApp =
+        window.kitchenApp || {};
+
+
+    window.kitchenApp.converter = {
+        convert,
+        renderConverter,
+        setConverterType
+    };
+
+
+    /*
+     * Preserve backward compatibility with the
+     * original Kitchen Utility global.
+     */
+    window.unitConverter = {
+        convert,
+        renderConverter,
+        setConverterType
+    };
+
+
+    initializeConverter();
+})();
