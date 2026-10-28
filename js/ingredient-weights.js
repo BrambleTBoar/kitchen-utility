@@ -5,13 +5,6 @@
     let ingredientWeightsLoaded = false;
     let ingredientWeightsLoading = false;
 
-
-    /*
-     * Cooking volume relationships.
-     *
-     * 1 cup = 16 tablespoons
-     * 1 cup = 48 teaspoons
-     */
     const volumeToCups = {
         cup: 1,
         tbsp: 1 / 16,
@@ -80,12 +73,10 @@
                 !enabled;
         }
 
-
         if (amountInput) {
             amountInput.disabled =
                 !enabled;
         }
-
 
         if (unitSelect) {
             unitSelect.disabled =
@@ -98,11 +89,9 @@
         const result =
             getResultsContainer();
 
-
         if (!result) {
             return;
         }
-
 
         result.innerHTML = `
             <p>
@@ -116,17 +105,14 @@
         const result =
             getResultsContainer();
 
-
         console.error(
             'Failed to load ingredient weights:',
             error
         );
 
-
         if (!result) {
             return;
         }
-
 
         result.innerHTML = `
             <p>
@@ -135,32 +121,202 @@
             </p>
 
             <p>
-                Refresh the page and try again.
+                ${String(error.message || error)}
             </p>
         `;
     }
 
 
     /*
-     * Validate the overall JSON structure during
-     * loading.
+     * Validate every ingredient record before
+     * accepting the dataset.
      *
-     * Detailed gramsPerCup validation is also
-     * performed before every calculation.
+     * Requirements:
+     *
+     * {
+     *   "ingredient name": {
+     *       "gramsPerCup": number > 0
+     *   }
+     * }
      */
     function validateIngredientData(data) {
+        const errors = [];
+
         if (
             !data ||
             typeof data !== 'object' ||
             Array.isArray(data)
         ) {
-            return false;
+            return {
+                valid: false,
+                errors: [
+                    'Ingredient weight data must be a JSON object.'
+                ],
+                cleanedData: {}
+            };
         }
 
 
-        return (
-            Object.keys(data).length > 0
+        const entries =
+            Object.entries(data);
+
+
+        if (entries.length === 0) {
+            return {
+                valid: false,
+                errors: [
+                    'Ingredient weight database is empty.'
+                ],
+                cleanedData: {}
+            };
+        }
+
+
+        const cleanedData = {};
+
+
+        entries.forEach(
+            ([ingredient, record]) => {
+
+                const normalizedIngredient =
+                    String(ingredient).trim();
+
+
+                if (!normalizedIngredient) {
+                    errors.push(
+                        'An ingredient has an empty name.'
+                    );
+
+                    return;
+                }
+
+
+                if (
+                    !record ||
+                    typeof record !== 'object' ||
+                    Array.isArray(record)
+                ) {
+                    errors.push(
+                        `"${normalizedIngredient}" does not contain a valid data object.`
+                    );
+
+                    return;
+                }
+
+
+                /*
+                 * Require the property to exist.
+                 */
+                if (
+                    !Object.hasOwn(
+                        record,
+                        'gramsPerCup'
+                    )
+                ) {
+                    errors.push(
+                        `"${normalizedIngredient}" is missing gramsPerCup.`
+                    );
+
+                    return;
+                }
+
+
+                const gramsPerCup =
+                    Number(
+                        record.gramsPerCup
+                    );
+
+
+                if (
+                    !Number.isFinite(
+                        gramsPerCup
+                    )
+                ) {
+                    errors.push(
+                        `"${normalizedIngredient}" has a non-numeric gramsPerCup value.`
+                    );
+
+                    return;
+                }
+
+
+                if (gramsPerCup <= 0) {
+                    errors.push(
+                        `"${normalizedIngredient}" has gramsPerCup <= 0.`
+                    );
+
+                    return;
+                }
+
+
+                /*
+                 * Extremely high values are probably
+                 * data-entry mistakes.
+                 *
+                 * Honey is around 340 g/cup, so
+                 * 2,000 g/cup leaves plenty of room
+                 * while catching obvious bad values.
+                 */
+                if (gramsPerCup > 2000) {
+                    errors.push(
+                        `"${normalizedIngredient}" has an implausibly high gramsPerCup value (${gramsPerCup}).`
+                    );
+
+                    return;
+                }
+
+
+                /*
+                 * Duplicate ingredient names that
+                 * differ only by capitalization or
+                 * whitespace should not silently
+                 * coexist.
+                 */
+                const normalizedKey =
+                    normalizedIngredient
+                        .toLowerCase();
+
+
+                const existingKey =
+                    Object.keys(
+                        cleanedData
+                    ).find(
+                        existingIngredient =>
+                            existingIngredient
+                                .toLowerCase() ===
+                            normalizedKey
+                    );
+
+
+                if (existingKey) {
+                    errors.push(
+                        `"${normalizedIngredient}" duplicates "${existingKey}".`
+                    );
+
+                    return;
+                }
+
+
+                cleanedData[
+                    normalizedIngredient
+                ] = {
+                    gramsPerCup
+                };
+            }
         );
+
+
+        return {
+            valid:
+                errors.length === 0 &&
+                Object.keys(
+                    cleanedData
+                ).length > 0,
+
+            errors,
+
+            cleanedData
+        };
     }
 
 
@@ -202,25 +358,47 @@
                 await response.json();
 
 
-            if (
-                !validateIngredientData(
+            const validation =
+                validateIngredientData(
                     loadedData
-                )
-            ) {
+                );
+
+
+            if (!validation.valid) {
+                const errorMessage =
+                    validation.errors.join(
+                        '\n'
+                    );
+
+
+                console.error(
+                    'Ingredient weight dataset failed validation:',
+                    validation.errors
+                );
+
+
                 throw new Error(
-                    'Ingredient weight data is not a valid object.'
+                    errorMessage
                 );
             }
 
 
             ingredientWeightData =
-                loadedData;
+                validation.cleanedData;
+
 
             ingredientWeightsLoaded =
                 true;
 
             ingredientWeightsLoading =
                 false;
+
+
+            console.info(
+                `Loaded ${Object.keys(
+                    ingredientWeightData
+                ).length} validated ingredient weight records.`
+            );
 
 
             populateIngredientList();
@@ -236,8 +414,10 @@
             ingredientWeightsLoaded =
                 false;
 
+            ingredientWeightData = {};
 
-            setControlsEnabled(true);
+
+            setControlsEnabled(false);
 
             renderLoadError(error);
         }
@@ -254,10 +434,6 @@
         }
 
 
-        /*
-         * Remember the user's current selection
-         * if the list is rebuilt.
-         */
         const previousSelection =
             select.value;
 
@@ -268,17 +444,17 @@
         const ingredients =
             Object.keys(
                 ingredientWeightData
-            )
-                .sort(
-                    (first, second) =>
-                        first.localeCompare(
-                            second
-                        )
-                );
+            ).sort(
+                (first, second) =>
+                    first.localeCompare(
+                        second
+                    )
+            );
 
 
         ingredients.forEach(
             ingredient => {
+
                 const option =
                     document.createElement(
                         'option'
@@ -304,9 +480,10 @@
 
         if (
             previousSelection &&
-            ingredientWeightData[
+            Object.hasOwn(
+                ingredientWeightData,
                 previousSelection
-            ]
+            )
         ) {
             select.value =
                 previousSelection;
@@ -352,12 +529,14 @@
         amount
     ) {
         switch (unit) {
+
             case 'cup':
                 return (
                     amount === 1
                         ? 'cup'
                         : 'cups'
                 );
+
 
             case 'tbsp':
                 return (
@@ -366,12 +545,14 @@
                         : 'tablespoons'
                 );
 
+
             case 'tsp':
                 return (
                     amount === 1
                         ? 'teaspoon'
                         : 'teaspoons'
                 );
+
 
             default:
                 return unit;
@@ -469,10 +650,6 @@
             );
 
 
-        const unit =
-            unitSelect.value;
-
-
         if (
             !Number.isFinite(amount) ||
             amount <= 0
@@ -486,6 +663,10 @@
 
             return;
         }
+
+
+        const unit =
+            unitSelect.value;
 
 
         if (
@@ -510,46 +691,20 @@
             ];
 
 
+        /*
+         * This should never occur after successful
+         * dataset validation, but leaving the guard
+         * in place protects against runtime changes.
+         */
         if (
             !ingredientData ||
-            typeof ingredientData !==
-                'object'
-        ) {
-            result.innerHTML = `
-                <p>
-                    No weight data is available
-                    for this ingredient.
-                </p>
-            `;
-
-            return;
-        }
-
-
-        /*
-         * This check anticipates Fix #6 as well:
-         * malformed JSON must never produce NaN
-         * results in the UI.
-         */
-        const gramsPerCup =
-            Number(
+            !Number.isFinite(
                 ingredientData
                     .gramsPerCup
-            );
-
-
-        if (
-            !Number.isFinite(
-                gramsPerCup
             ) ||
-            gramsPerCup <= 0
+            ingredientData
+                .gramsPerCup <= 0
         ) {
-            console.error(
-                `Invalid gramsPerCup value for "${ingredient}".`,
-                ingredientData
-            );
-
-
             result.innerHTML = `
                 <p>
                     Reference weight data for
@@ -578,6 +733,11 @@
 
             return;
         }
+
+
+        const gramsPerCup =
+            ingredientData
+                .gramsPerCup;
 
 
         const grams =
@@ -723,15 +883,6 @@
     }
 
 
-    /*
-     * Expose only the intentional public API.
-     *
-     * ingredientWeightData,
-     * formatIngredientName,
-     * getUnitLabel,
-     * and other helpers remain private inside
-     * this file.
-     */
     window.kitchenApp =
         window.kitchenApp || {};
 
@@ -739,7 +890,8 @@
     window.kitchenApp.ingredientWeights = {
         calculateIngredientWeight,
         convertVolumeToCups,
-        loadIngredientWeights
+        loadIngredientWeights,
+        validateIngredientData
     };
 
 
