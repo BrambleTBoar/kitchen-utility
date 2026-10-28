@@ -1,199 +1,674 @@
+/* Kitchen Tools - Touchscreen-first layout */
+
 :root {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --primary: #e94560;
-    --text: #eee;
-    --text-muted: #aaa;
-    --border: #333;
-    --radius: 8px;
-    --spacing: 1rem;
+    --bg: #f5f3ee;
+    --surface: #ffffff;
+    --surface-alt: #eeeae2;
+
+    --primary: #2f6f4e;
+    --primary-hover: #255a3f;
+    --primary-light: #dceadf;
+
+    --accent: #d97706;
+
+    --text: #262626;
+    --text-muted: #6b6b6b;
+
+    --border: #d5d0c7;
+    --danger: #b83a3a;
+
+    --radius: 14px;
+    --radius-small: 9px;
+
+    --shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+
+    /*
+     * Touch targets should generally be at least
+     * around 48px tall. We'll use 52-56px.
+     */
+    --touch-height: 54px;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* --------------------------------------------------
+   Global
+-------------------------------------------------- */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+
     background: var(--bg);
     color: var(--text);
+
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    font-size: 17px;
+    line-height: 1.5;
+
     min-height: 100vh;
-    padding: var(--spacing);
+}
+
+
+/* --------------------------------------------------
+   Header
+-------------------------------------------------- */
+
+header {
+    background: var(--primary);
+    color: white;
+
+    text-align: center;
+
+    padding:
+        max(20px, env(safe-area-inset-top))
+        20px
+        22px;
+
+    box-shadow: var(--shadow);
 }
 
 header h1 {
-    text-align: center;
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
+    margin: 0;
+
+    font-size: clamp(1.8rem, 6vw, 2.6rem);
+    line-height: 1.15;
 }
 
+header p {
+    margin: 8px auto 0;
+
+    max-width: 700px;
+
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+
+/* --------------------------------------------------
+   Main tool navigation
+-------------------------------------------------- */
+
 .tabs {
-    display: flex;
-    gap: 0.25rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 1rem;
-    padding-bottom: 0.25rem;
+    display: grid;
+
+    /*
+     * Two large buttons per row works much better
+     * on kitchen tablets than six tiny tabs.
+     */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 10px;
+
+    width: min(900px, calc(100% - 24px));
+
+    margin: 16px auto;
 }
 
 .tab {
-    flex: 1;
-    min-width: 70px;
-    padding: 0.75rem 0.5rem;
+    min-height: 60px;
+
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+
     background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    border-radius: var(--radius) var(--radius) 0 0;
+    color: var(--text);
+
+    padding: 10px 12px;
+
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+
     cursor: pointer;
-    font-size: 0.85rem;
-    text-align: center;
-    transition: all 0.2s;
+
+    touch-action: manipulation;
+
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease,
+        transform 0.08s ease;
+}
+
+.tab:hover {
+    border-color: var(--primary);
+}
+
+.tab:active {
+    transform: scale(0.98);
 }
 
 .tab.active {
     background: var(--primary);
     color: white;
+
     border-color: var(--primary);
+}
+
+
+/* --------------------------------------------------
+   Main content
+-------------------------------------------------- */
+
+main {
+    width: min(900px, calc(100% - 24px));
+
+    margin: 0 auto;
+    padding-bottom:
+        max(40px, env(safe-area-inset-bottom));
 }
 
 .tool-panel {
+    display: block;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    box-shadow: var(--shadow);
+
+    padding: 22px;
+
+    margin-bottom: 24px;
+}
+
+.tool-panel[hidden] {
     display: none;
 }
 
-.tool-panel.active {
-    display: block;
+.tool-panel h2 {
+    margin-top: 0;
+    margin-bottom: 18px;
+
+    color: var(--primary);
+
+    font-size: clamp(1.45rem, 5vw, 2rem);
 }
 
-.input-group {
-    margin-bottom: 0.75rem;
-}
-
-.input-group label {
-    display: block;
-    margin-bottom: 0.25rem;
-    font-size: 0.9rem;
+.tool-panel > p {
     color: var(--text-muted);
+
+    margin-top: -8px;
+    margin-bottom: 22px;
 }
 
-.input-group input,
-.input-group select {
-    width: 100%;
-    padding: 0.5rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: var(--radius);
+
+/* --------------------------------------------------
+   Forms
+-------------------------------------------------- */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-weight: 700;
     font-size: 1rem;
 }
 
-.input-group input:focus,
-.input-group select:focus {
+input,
+select,
+textarea {
+    display: block;
+
+    width: 100%;
+    min-height: var(--touch-height);
+
+    padding: 11px 14px;
+
+    border: 2px solid var(--border);
+    border-radius: var(--radius-small);
+
+    background: white;
+    color: var(--text);
+
+    /*
+     * 16px+ also prevents unwanted automatic zoom
+     * on many mobile browsers.
+     */
+    font-family: inherit;
+    font-size: 18px;
+
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
     outline: none;
+
     border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 3px rgba(47, 111, 78, 0.18);
 }
 
-.btn {
-    padding: 0.5rem 1rem;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: var(--radius);
+select {
     cursor: pointer;
-    font-size: 0.9rem;
 }
 
-.btn:hover { opacity: 0.9; }
-
-.results {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    background: var(--surface);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-}
-
-.results p {
-    margin-bottom: 0.25rem;
-    font-size: 0.95rem;
-}
-
-.results strong {
-    color: var(--primary);
-}
-
-.recipe-inputs {
-    margin-bottom: 0.5rem;
-}
-
-.recipe-input-row {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.recipe-input-row input {
-    flex: 1;
-}
-
-.timer-list {
-    margin-bottom: 1rem;
-}
-
-.timer-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-}
-
-.timer-item .timer-name {
-    font-weight: bold;
-    margin-bottom: 0.25rem;
-}
-
-.timer-item .timer-time {
-    font-size: 1.5rem;
+input[type="number"] {
     font-variant-numeric: tabular-nums;
 }
 
-.timer-item .timer-controls {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+
+/* --------------------------------------------------
+   General buttons
+-------------------------------------------------- */
+
+button,
+.btn {
+    font-family: inherit;
+
+    touch-action: manipulation;
 }
 
-.timer-item.finished {
-    border-color: var(--primary);
-    animation: pulse 1s infinite;
+.btn {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    min-height: var(--touch-height);
+
+    border: 0;
+    border-radius: var(--radius-small);
+
+    background: var(--primary);
+    color: white;
+
+    padding: 11px 20px;
+
+    font-size: 1rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    text-decoration: none;
+
+    transition:
+        background-color 0.15s ease,
+        transform 0.08s ease;
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+.btn:hover {
+    background: var(--primary-hover);
 }
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+
+/* --------------------------------------------------
+   Result cards
+-------------------------------------------------- */
+
+.results {
+    margin-top: 20px;
+
+    background: var(--primary-light);
+
+    border-left: 5px solid var(--primary);
+    border-radius: var(--radius-small);
+
+    padding: 18px;
+}
+
+.results:empty {
+    display: none;
+}
+
+.results p {
+    margin: 7px 0;
+}
+
+.results strong {
+    font-size: 1.08em;
+}
+
+
+/* --------------------------------------------------
+   Converter type controls
+-------------------------------------------------- */
 
 .converter-type-tabs {
-    display: flex;
-    gap: 0.25rem;
-    margin-bottom: 0.75rem;
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 8px;
+
+    margin-bottom: 22px;
 }
 
 .converter-tab {
-    padding: 0.5rem 1rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    border-radius: var(--radius);
+    min-height: var(--touch-height);
+
+    padding: 8px;
+
+    border: 2px solid var(--border);
+    border-radius: var(--radius-small);
+
+    background: var(--surface-alt);
+    color: var(--text);
+
+    font-size: 0.95rem;
+    font-weight: 700;
+
     cursor: pointer;
-    font-size: 0.85rem;
+
+    touch-action: manipulation;
 }
 
 .converter-tab.active {
     background: var(--primary);
-    color: white;
     border-color: var(--primary);
+
+    color: white;
 }
 
-@media (min-width: 600px) {
-    body { max-width: 600px; margin: 0 auto; }
-    .recipe-input-row { flex-wrap: nowrap; }
+
+/* --------------------------------------------------
+   Recipe scaler
+-------------------------------------------------- */
+
+#ingredient-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    margin-bottom: 16px;
+}
+
+/*
+ * This intentionally supports likely existing
+ * row layouts without requiring scaler.js changes.
+ */
+#ingredient-list input,
+#ingredient-list select {
+    margin-bottom: 7px;
+}
+
+#add-ingredient {
+    width: 100%;
+}
+
+
+/* --------------------------------------------------
+   Timer
+-------------------------------------------------- */
+
+.timer-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 16px;
+
+    margin-bottom: 18px;
+}
+
+.timer-item {
+    background: var(--surface-alt);
+
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+
+    padding: 18px;
+}
+
+.timer-item.finished {
+    border-color: var(--accent);
+
+    background: #fff4dc;
+}
+
+.timer-name {
+    font-size: 1.15rem;
+    font-weight: 700;
+
+    text-align: center;
+}
+
+.timer-time {
+    margin: 10px 0 4px;
+
+    text-align: center;
+
+    /*
+     * Very large countdown so it is readable
+     * from across the kitchen.
+     */
+    font-size: clamp(2.6rem, 12vw, 4.5rem);
+    font-weight: 800;
+
+    line-height: 1;
+
+    font-variant-numeric: tabular-nums;
+
+    color: var(--primary);
+}
+
+.timer-item.finished .timer-time {
+    color: var(--accent);
+}
+
+.timer-controls {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(100px, 1fr));
+
+    gap: 10px;
+
+    margin-top: 16px;
+}
+
+.timer-controls .btn {
+    width: 100%;
+}
+
+#add-timer {
+    width: 100%;
+
+    min-height: 60px;
+
+    font-size: 1.1rem;
+}
+
+
+/* --------------------------------------------------
+   Ingredient weights
+-------------------------------------------------- */
+
+#weight-results {
+    text-align: center;
+}
+
+#weight-results p:nth-child(2) {
+    font-size: clamp(1.7rem, 7vw, 2.5rem);
+
+    color: var(--primary);
+}
+
+
+/* --------------------------------------------------
+   Substitutions
+-------------------------------------------------- */
+
+#sub-search {
+    /*
+     * Search field is particularly important on a
+     * touchscreen, so make it slightly oversized.
+     */
+    min-height: 58px;
+
+    font-size: 18px;
+}
+
+
+/* --------------------------------------------------
+   Accessible focus states
+-------------------------------------------------- */
+
+button:focus-visible,
+.btn:focus-visible,
+.tab:focus-visible,
+.converter-tab:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+}
+
+
+/* --------------------------------------------------
+   Tablet / desktop
+-------------------------------------------------- */
+
+@media (min-width: 700px) {
+
+    .tabs {
+        /*
+         * Three across on tablets gives us two rows
+         * of comfortably large controls.
+         */
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .tool-panel {
+        padding: 30px;
+    }
+
+    .form-group {
+        max-width: 650px;
+    }
+
+    .timer-controls {
+        grid-template-columns:
+            repeat(auto-fit, minmax(140px, 1fr));
+    }
+}
+
+
+/* --------------------------------------------------
+   Large desktop
+-------------------------------------------------- */
+
+@media (min-width: 1050px) {
+
+    .tabs {
+        /*
+         * Desktop users can have the conventional
+         * one-row navigation while retaining
+         * reasonable target sizes.
+         */
+        width: min(1100px, calc(100% - 40px));
+
+        grid-template-columns: repeat(6, 1fr);
+    }
+
+    main {
+        width: min(1000px, calc(100% - 40px));
+    }
+
+    .tab {
+        min-height: 54px;
+
+        font-size: 0.95rem;
+    }
+}
+
+
+/* --------------------------------------------------
+   Small phones
+-------------------------------------------------- */
+
+@media (max-width: 420px) {
+
+    body {
+        font-size: 16px;
+    }
+
+    header {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .tabs,
+    main {
+        width: calc(100% - 16px);
+    }
+
+    .tabs {
+        gap: 7px;
+
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+
+    .tab {
+        min-height: 58px;
+
+        padding: 8px;
+
+        font-size: 0.9rem;
+    }
+
+    .tool-panel {
+        padding: 16px;
+
+        margin-bottom: 16px;
+    }
+
+    .converter-type-tabs {
+        /*
+         * On particularly narrow screens these are
+         * easier to hit stacked vertically.
+         */
+        grid-template-columns: 1fr;
+    }
+
+    .timer-controls {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* --------------------------------------------------
+   Reduced motion
+-------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
 }
