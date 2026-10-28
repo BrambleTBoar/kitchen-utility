@@ -1,784 +1,1195 @@
 // js/substitutions.js
 
-let substitutionData = {};
+(() => {
+    let substitutionData = {};
+    let substitutionsLoaded = false;
+    let substitutionsLoading = false;
 
-const substitutionAliases = {
-    eggs: 'egg',
-    flour: 'all-purpose flour',
-    apflour: 'all-purpose flour',
-    'ap flour': 'all-purpose flour',
-    'plain flour': 'all-purpose flour',
+    /*
+     * Aliases should represent alternate names,
+     * spelling variants, plurals, or equivalent
+     * terminology.
+     *
+     * Ingredients that merely substitute for one
+     * another do not belong in this alias table.
+     */
+    const substitutionAliases = {
+        eggs: 'egg',
 
-    breadcrumbs: 'bread crumbs',
-    breadcrumb: 'bread crumbs',
+        flour: 'all-purpose flour',
+        flours: 'all-purpose flour',
+        'ap flour': 'all-purpose flour',
+        apflour: 'all-purpose flour',
+        'plain flour': 'all-purpose flour',
 
-    'brown sugars': 'brown sugar',
-    'powdered sugars': 'powdered sugar',
-    'confectioners sugar': 'powdered sugar',
-    'confectioner sugar': 'powdered sugar',
-    'icing sugar': 'powdered sugar',
+        breadcrumbs: 'bread crumbs',
+        breadcrumb: 'bread crumbs',
 
-    butters: 'butter',
-    milks: 'milk',
-    oils: 'vegetable oil',
+        'brown sugars': 'brown sugar',
 
-    'heavy whipping cream': 'heavy cream',
-    'whipping cream': 'heavy cream',
+        'powdered sugars': 'powdered sugar',
+        'confectioners sugar': 'powdered sugar',
+        "confectioner's sugar": 'powdered sugar',
+        'confectioner sugar': 'powdered sugar',
+        'icing sugar': 'powdered sugar',
 
-    yogurt: 'sour cream',
-    yoghurt: 'sour cream',
-    'greek yoghurt': 'sour cream',
-    'greek yogurt': 'sour cream',
+        butters: 'butter',
+        milks: 'milk',
 
-    'corn starch': 'cornstarch',
+        'heavy whipping cream': 'heavy cream',
+        'whipping cream': 'heavy cream',
 
-    'cream of tartars': 'cream of tartar',
+        'corn starch': 'cornstarch',
 
-    'self raising flour': 'self-rising flour',
-    'self rising flour': 'self-rising flour',
+        'cream of tartars': 'cream of tartar',
 
-    'bicarb soda': 'baking soda',
-    bicarbonate: 'baking soda',
-    'bicarbonate of soda': 'baking soda',
+        'self raising flour': 'self-rising flour',
+        'self-rising flours': 'self-rising flour',
+        'self rising flour': 'self-rising flour',
 
-    'baking powders': 'baking powder',
-    'baking sodas': 'baking soda',
+        'bicarb soda': 'baking soda',
+        bicarbonate: 'baking soda',
+        'bicarbonate of soda': 'baking soda',
 
-    honey: 'honey',
-    honeys: 'honey',
+        'baking powders': 'baking powder',
+        'baking sodas': 'baking soda',
 
-    'maple syrups': 'maple syrup',
-    molasses: 'molasses',
+        honeys: 'honey',
+        'maple syrups': 'maple syrup',
 
-    'white wines': 'white wine',
-    'red wines': 'red wine',
+        'white wines': 'white wine',
+        'red wines': 'red wine',
 
-    'rice wine vinegar': 'rice vinegar',
-    'cider vinegar': 'apple cider vinegar',
+        'rice wine vinegar': 'rice vinegar',
+        'cider vinegar': 'apple cider vinegar',
 
-    lemons: 'lemon juice',
-    lemon: 'lemon juice',
-    limes: 'lime juice',
-    lime: 'lime juice',
+        lemon: 'lemon juice',
+        lemons: 'lemon juice',
 
-    'soy sauces': 'soy sauce',
-    tamari: 'soy sauce',
+        lime: 'lime juice',
+        limes: 'lime juice',
 
-    worcestershire: 'worcestershire sauce',
-    worcester: 'worcestershire sauce',
+        'soy sauces': 'soy sauce',
 
-    dijon: 'dijon mustard',
+        worcestershire: 'worcestershire sauce',
+        worcester: 'worcestershire sauce',
 
-    'tomato pastes': 'tomato paste',
-    'tomato sauces': 'tomato sauce',
+        dijon: 'dijon mustard',
 
-    'chicken stock': 'chicken broth',
-    'beef stock': 'beef broth',
-    'vegetable stock': 'vegetable broth',
-    'veggie broth': 'vegetable broth',
-    'veggie stock': 'vegetable broth',
+        'tomato pastes': 'tomato paste',
+        'tomato sauces': 'tomato sauce',
 
-    garlics: 'garlic',
-    ginger: 'fresh ginger',
+        'chicken stock': 'chicken broth',
+        'beef stock': 'beef broth',
+        'vegetable stock': 'vegetable broth',
+        'veggie broth': 'vegetable broth',
+        'veggie stock': 'vegetable broth',
 
-    herbs: 'fresh herbs',
-    basil: 'fresh basil',
-    oregano: 'fresh oregano',
-    thyme: 'fresh thyme',
-    rosemary: 'fresh rosemary',
+        garlics: 'garlic',
 
-    vanilla: 'vanilla extract',
+        ginger: 'fresh ginger',
 
-    yeasts: 'yeast'
-};
+        herbs: 'fresh herbs',
+        basil: 'fresh basil',
+        oregano: 'fresh oregano',
+        thyme: 'fresh thyme',
+        rosemary: 'fresh rosemary',
+
+        vanilla: 'vanilla extract',
+
+        yeasts: 'yeast'
+    };
 
 
-async function loadSubstitutions() {
-    try {
-        const response = await fetch('js/substitutions.json');
+    function normalizeSearchText(value) {
+        return String(value ?? '')
+            .toLowerCase()
+            .trim()
+            .replace(/[_-]+/g, ' ')
+            .replace(/[^\p{L}\p{N}\s]/gu, '')
+            .replace(/\s+/g, ' ');
+    }
 
-        if (!response.ok) {
-            throw new Error(
-                `Unable to load substitutions: HTTP ${response.status}`
-            );
+
+    function resolveAlias(value) {
+        const normalizedValue =
+            normalizeSearchText(value);
+
+        return (
+            substitutionAliases[normalizedValue] ||
+            normalizedValue
+        );
+    }
+
+
+    function formatIngredientName(name) {
+        return String(name)
+            .split(' ')
+            .map(word => {
+                if (!word) {
+                    return '';
+                }
+
+                return (
+                    word.charAt(0).toUpperCase() +
+                    word.slice(1)
+                );
+            })
+            .join(' ');
+    }
+
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+
+    function getSearchInput() {
+        return document.getElementById(
+            'sub-search'
+        );
+    }
+
+
+    function getResultsContainer() {
+        return document.getElementById(
+            'sub-results'
+        );
+    }
+
+
+    function setSearchEnabled(enabled) {
+        const searchInput =
+            getSearchInput();
+
+        if (!searchInput) {
+            return;
         }
 
-        substitutionData = await response.json();
+        searchInput.disabled =
+            !enabled;
 
-        renderSubstitutionWelcome();
+        searchInput.setAttribute(
+            'aria-busy',
+            enabled ? 'false' : 'true'
+        );
+    }
 
-    } catch (error) {
+
+    function renderLoadingState() {
+        const container =
+            getResultsContainer();
+
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = `
+            <div
+                class="substitution-loading"
+                role="status"
+                aria-live="polite"
+            >
+                <p>
+                    Loading substitution database...
+                </p>
+            </div>
+        `;
+    }
+
+
+    function renderLoadError(error) {
+        const container =
+            getResultsContainer();
+
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = `
+            <div
+                class="substitution-error"
+                role="alert"
+            >
+                <p>
+                    The substitution database could
+                    not be loaded.
+                </p>
+
+                <p class="substitution-help">
+                    Refresh the page and try again.
+                </p>
+            </div>
+        `;
+
         console.error(
             'Failed to load substitutions:',
             error
         );
-
-        const container =
-            document.getElementById('sub-results');
-
-        if (container) {
-            container.innerHTML = `
-                <p>
-                    Unable to load the substitution database.
-                </p>
-            `;
-        }
-    }
-}
-
-
-function normalizeSearchText(value) {
-    return String(value)
-        .toLowerCase()
-        .trim()
-        .replace(/[_-]+/g, ' ')
-        .replace(/[^\w\s]/g, '')
-        .replace(/\s+/g, ' ');
-}
-
-
-function resolveAlias(value) {
-    const normalized =
-        normalizeSearchText(value);
-
-    return substitutionAliases[normalized] ||
-           normalized;
-}
-
-
-function formatIngredientName(name) {
-    return String(name)
-        .split(' ')
-        .map(word =>
-            word.charAt(0).toUpperCase() +
-            word.slice(1)
-        )
-        .join(' ');
-}
-
-
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-}
-
-
-function calculateEditDistance(firstValue, secondValue) {
-    const first =
-        normalizeSearchText(firstValue);
-
-    const second =
-        normalizeSearchText(secondValue);
-
-    const rows =
-        first.length + 1;
-
-    const columns =
-        second.length + 1;
-
-    const matrix =
-        Array.from(
-            { length: rows },
-            () => Array(columns).fill(0)
-        );
-
-    for (let row = 0; row < rows; row++) {
-        matrix[row][0] = row;
     }
 
-    for (let column = 0; column < columns; column++) {
-        matrix[0][column] = column;
-    }
 
-    for (let row = 1; row < rows; row++) {
-        for (
-            let column = 1;
-            column < columns;
-            column++
+    async function loadSubstitutions() {
+        if (
+            substitutionsLoaded ||
+            substitutionsLoading
         ) {
-            const cost =
-                first[row - 1] ===
-                second[column - 1]
-                    ? 0
-                    : 1;
-
-            matrix[row][column] =
-                Math.min(
-                    matrix[row - 1][column] + 1,
-                    matrix[row][column - 1] + 1,
-                    matrix[row - 1][column - 1] +
-                        cost
-                );
+            return;
         }
-    }
 
-    return matrix[rows - 1][columns - 1];
-}
+        substitutionsLoading = true;
 
+        /*
+         * Save the current value before disabling
+         * the search field. This protects text that
+         * was restored by the browser or entered
+         * immediately during page startup.
+         */
+        const searchInput =
+            getSearchInput();
 
-function scoreIngredientMatch(ingredient, searchText) {
-    const normalizedIngredient =
-        normalizeSearchText(ingredient);
+        const pendingSearch =
+            searchInput
+                ? searchInput.value
+                : '';
 
-    const normalizedSearch =
-        normalizeSearchText(searchText);
+        setSearchEnabled(false);
+        renderLoadingState();
 
-    const resolvedSearch =
-        resolveAlias(searchText);
+        try {
+            const response =
+                await fetch(
+                    'js/substitutions.json',
+                    {
+                        cache: 'no-cache'
+                    }
+                );
 
-    /*
-     * Exact ingredient match.
-     */
-    if (normalizedIngredient === normalizedSearch) {
-        return 1000;
-    }
-
-    /*
-     * Exact alias match.
-     */
-    if (normalizedIngredient === resolvedSearch) {
-        return 950;
-    }
-
-    /*
-     * Ingredient begins with the user's search.
-     */
-    if (
-        normalizedIngredient.startsWith(
-            normalizedSearch
-        )
-    ) {
-        return 800 -
-            normalizedIngredient.length;
-    }
-
-    /*
-     * Search appears anywhere in the ingredient.
-     */
-    if (
-        normalizedIngredient.includes(
-            normalizedSearch
-        )
-    ) {
-        return 700 -
-            normalizedIngredient.indexOf(
-                normalizedSearch
-            );
-    }
-
-    /*
-     * Resolved alias appears in the ingredient.
-     */
-    if (
-        resolvedSearch !== normalizedSearch &&
-        normalizedIngredient.includes(
-            resolvedSearch
-        )
-    ) {
-        return 650;
-    }
-
-    /*
-     * Match individual words.
-     */
-    const searchWords =
-        normalizedSearch
-            .split(' ')
-            .filter(Boolean);
-
-    const ingredientWords =
-        normalizedIngredient
-            .split(' ')
-            .filter(Boolean);
-
-    const matchingWords =
-        searchWords.filter(searchWord =>
-            ingredientWords.some(
-                ingredientWord =>
-                    ingredientWord.startsWith(
-                        searchWord
-                    ) ||
-                    searchWord.startsWith(
-                        ingredientWord
-                    )
-            )
-        ).length;
-
-    if (
-        searchWords.length > 0 &&
-        matchingWords === searchWords.length
-    ) {
-        return 550 + matchingWords;
-    }
-
-    /*
-     * Typo tolerance. Short searches require a
-     * closer match to avoid noisy results.
-     */
-    const editDistance =
-        calculateEditDistance(
-            normalizedIngredient,
-            normalizedSearch
-        );
-
-    const maximumDistance =
-        normalizedSearch.length <= 4
-            ? 1
-            : normalizedSearch.length <= 8
-                ? 2
-                : 3;
-
-    if (editDistance <= maximumDistance) {
-        return 400 - editDistance;
-    }
-
-    /*
-     * Check typos against each part of a
-     * multi-word ingredient.
-     */
-    let bestWordDistance =
-        Number.POSITIVE_INFINITY;
-
-    ingredientWords.forEach(word => {
-        const distance =
-            calculateEditDistance(
-                word,
-                normalizedSearch
-            );
-
-        bestWordDistance =
-            Math.min(
-                bestWordDistance,
-                distance
-            );
-    });
-
-    if (
-        bestWordDistance <= maximumDistance
-    ) {
-        return 300 - bestWordDistance;
-    }
-
-    return 0;
-}
-
-
-function findMatchingIngredients(searchText) {
-    const normalizedSearch =
-        normalizeSearchText(searchText);
-
-    if (!normalizedSearch) {
-        return [];
-    }
-
-    return Object.keys(substitutionData)
-        .map(ingredient => ({
-            ingredient,
-            score: scoreIngredientMatch(
-                ingredient,
-                normalizedSearch
-            )
-        }))
-        .filter(match =>
-            match.score > 0
-        )
-        .sort((first, second) => {
-            if (second.score !== first.score) {
-                return second.score -
-                       first.score;
+            if (!response.ok) {
+                throw new Error(
+                    `HTTP ${response.status}`
+                );
             }
 
-            return first.ingredient.localeCompare(
-                second.ingredient
+            const loadedData =
+                await response.json();
+
+            if (
+                !loadedData ||
+                typeof loadedData !== 'object' ||
+                Array.isArray(loadedData)
+            ) {
+                throw new Error(
+                    'Substitution data is not a valid object.'
+                );
+            }
+
+            substitutionData =
+                loadedData;
+
+            substitutionsLoaded = true;
+            substitutionsLoading = false;
+
+            setSearchEnabled(true);
+
+            /*
+             * Restore any text captured before the
+             * asynchronous load completed.
+             */
+            if (
+                searchInput &&
+                !searchInput.value &&
+                pendingSearch
+            ) {
+                searchInput.value =
+                    pendingSearch;
+            }
+
+            /*
+             * Do not overwrite an active search
+             * with the welcome screen.
+             */
+            if (
+                searchInput &&
+                searchInput.value.trim()
+            ) {
+                renderSubstitutions();
+            } else {
+                renderSubstitutionWelcome();
+            }
+
+        } catch (error) {
+            substitutionsLoading = false;
+            substitutionsLoaded = false;
+
+            setSearchEnabled(true);
+            renderLoadError(error);
+        }
+    }
+
+
+    function calculateEditDistance(
+        firstValue,
+        secondValue
+    ) {
+        const first =
+            normalizeSearchText(firstValue);
+
+        const second =
+            normalizeSearchText(secondValue);
+
+        if (first === second) {
+            return 0;
+        }
+
+        if (!first) {
+            return second.length;
+        }
+
+        if (!second) {
+            return first.length;
+        }
+
+        /*
+         * Two-row Levenshtein implementation.
+         * This uses less memory than allocating
+         * the complete matrix.
+         */
+        let previousRow =
+            Array.from(
+                { length: second.length + 1 },
+                (_, index) => index
             );
-        });
-}
 
+        let currentRow =
+            new Array(
+                second.length + 1
+            );
 
-function findSubstitutions(ingredient) {
-    const resolvedIngredient =
-        resolveAlias(ingredient);
+        for (
+            let firstIndex = 1;
+            firstIndex <= first.length;
+            firstIndex++
+        ) {
+            currentRow[0] =
+                firstIndex;
 
-    return substitutionData[
-        resolvedIngredient
-    ] || [];
-}
+            for (
+                let secondIndex = 1;
+                secondIndex <= second.length;
+                secondIndex++
+            ) {
+                const cost =
+                    first[firstIndex - 1] ===
+                    second[secondIndex - 1]
+                        ? 0
+                        : 1;
 
+                currentRow[secondIndex] =
+                    Math.min(
+                        previousRow[secondIndex] + 1,
+                        currentRow[secondIndex - 1] + 1,
+                        previousRow[secondIndex - 1] +
+                            cost
+                    );
+            }
 
-function renderSubstitutionWelcome() {
-    const container =
-        document.getElementById('sub-results');
+            const temporaryRow =
+                previousRow;
 
-    if (!container) {
-        return;
+            previousRow =
+                currentRow;
+
+            currentRow =
+                temporaryRow;
+        }
+
+        return previousRow[
+            second.length
+        ];
     }
 
-    const popularIngredients = [
-        'butter',
-        'egg',
-        'buttermilk',
-        'heavy cream',
-        'baking powder',
-        'cornstarch',
-        'milk',
-        'brown sugar'
-    ];
 
-    const buttons =
-        popularIngredients
-            .filter(ingredient =>
-                substitutionData[ingredient]
+    function scoreIngredientMatch(
+        ingredient,
+        searchText
+    ) {
+        const normalizedIngredient =
+            normalizeSearchText(ingredient);
+
+        const normalizedSearch =
+            normalizeSearchText(searchText);
+
+        const resolvedSearch =
+            resolveAlias(searchText);
+
+        if (!normalizedSearch) {
+            return 0;
+        }
+
+        /*
+         * Exact ingredient name.
+         */
+        if (
+            normalizedIngredient ===
+            normalizedSearch
+        ) {
+            return 1000;
+        }
+
+        /*
+         * Exact recognized alias.
+         */
+        if (
+            normalizedIngredient ===
+            resolvedSearch
+        ) {
+            return 950;
+        }
+
+        /*
+         * Ingredient begins with the search.
+         */
+        if (
+            normalizedIngredient.startsWith(
+                normalizedSearch
             )
-            .map(ingredient => `
-                <button
-                    type="button"
-                    class="substitution-suggestion"
-                    data-ingredient="${escapeHtml(
-                        ingredient
-                    )}"
-                >
-                    ${escapeHtml(
-                        formatIngredientName(
-                            ingredient
-                        )
-                    )}
-                </button>
-            `)
-            .join('');
+        ) {
+            return (
+                800 -
+                normalizedIngredient.length
+            );
+        }
 
-    container.innerHTML = `
-        <div class="substitution-welcome">
-            <p>
-                Search for an ingredient or choose
-                a common substitution below.
-            </p>
+        /*
+         * Search appears anywhere within the
+         * ingredient name.
+         */
+        if (
+            normalizedIngredient.includes(
+                normalizedSearch
+            )
+        ) {
+            return (
+                700 -
+                normalizedIngredient.indexOf(
+                    normalizedSearch
+                )
+            );
+        }
 
-            <div class="substitution-suggestions">
-                ${buttons}
-            </div>
-        </div>
-    `;
-}
+        /*
+         * Resolved alias appears within a longer
+         * ingredient name.
+         */
+        if (
+            resolvedSearch !==
+                normalizedSearch &&
+            normalizedIngredient.includes(
+                resolvedSearch
+            )
+        ) {
+            return 650;
+        }
 
+        const searchWords =
+            normalizedSearch
+                .split(' ')
+                .filter(Boolean);
 
-function renderSubstitutionCards(ingredient) {
-    const container =
-        document.getElementById('sub-results');
+        const ingredientWords =
+            normalizedIngredient
+                .split(' ')
+                .filter(Boolean);
 
-    if (!container) {
-        return;
+        const matchingWords =
+            searchWords.filter(
+                searchWord =>
+                    ingredientWords.some(
+                        ingredientWord =>
+                            ingredientWord.startsWith(
+                                searchWord
+                            ) ||
+                            searchWord.startsWith(
+                                ingredientWord
+                            )
+                    )
+            ).length;
+
+        if (
+            searchWords.length > 0 &&
+            matchingWords ===
+                searchWords.length
+        ) {
+            return (
+                550 +
+                matchingWords
+            );
+        }
+
+        /*
+         * Typo tolerance is disabled for one- and
+         * two-character searches because those
+         * queries produce too many false matches.
+         */
+        if (
+            normalizedSearch.length < 3
+        ) {
+            return 0;
+        }
+
+        const maximumDistance =
+            normalizedSearch.length <= 4
+                ? 1
+                : normalizedSearch.length <= 8
+                    ? 2
+                    : 3;
+
+        /*
+         * Compare against the entire ingredient.
+         */
+        const fullEditDistance =
+            calculateEditDistance(
+                normalizedIngredient,
+                normalizedSearch
+            );
+
+        if (
+            fullEditDistance <=
+            maximumDistance
+        ) {
+            return (
+                400 -
+                fullEditDistance
+            );
+        }
+
+        /*
+         * Compare against the individual words in
+         * multi-word ingredient names.
+         */
+        let bestWordDistance =
+            Number.POSITIVE_INFINITY;
+
+        ingredientWords.forEach(word => {
+            const wordDistance =
+                calculateEditDistance(
+                    word,
+                    normalizedSearch
+                );
+
+            bestWordDistance =
+                Math.min(
+                    bestWordDistance,
+                    wordDistance
+                );
+        });
+
+        if (
+            bestWordDistance <=
+            maximumDistance
+        ) {
+            return (
+                300 -
+                bestWordDistance
+            );
+        }
+
+        return 0;
     }
 
-    const substitutions =
-        substitutionData[ingredient] || [];
 
-    if (substitutions.length === 0) {
+    function findMatchingIngredients(
+        searchText
+    ) {
+        if (!substitutionsLoaded) {
+            return [];
+        }
+
+        const normalizedSearch =
+            normalizeSearchText(searchText);
+
+        if (!normalizedSearch) {
+            return [];
+        }
+
+        return Object.keys(
+            substitutionData
+        )
+            .map(ingredient => ({
+                ingredient,
+                score:
+                    scoreIngredientMatch(
+                        ingredient,
+                        normalizedSearch
+                    )
+            }))
+            .filter(match =>
+                match.score > 0
+            )
+            .sort(
+                (first, second) => {
+                    if (
+                        second.score !==
+                        first.score
+                    ) {
+                        return (
+                            second.score -
+                            first.score
+                        );
+                    }
+
+                    return first.ingredient
+                        .localeCompare(
+                            second.ingredient
+                        );
+                }
+            );
+    }
+
+
+    function findSubstitutions(
+        ingredient
+    ) {
+        if (!substitutionsLoaded) {
+            return [];
+        }
+
+        const resolvedIngredient =
+            resolveAlias(ingredient);
+
+        return (
+            substitutionData[
+                resolvedIngredient
+            ] || []
+        );
+    }
+
+
+    function renderSubstitutionWelcome() {
+        const container =
+            getResultsContainer();
+
+        if (!container) {
+            return;
+        }
+
+        const popularIngredients = [
+            'butter',
+            'egg',
+            'buttermilk',
+            'heavy cream',
+            'baking powder',
+            'cornstarch',
+            'milk',
+            'brown sugar'
+        ];
+
+        const suggestionButtons =
+            popularIngredients
+                .filter(ingredient =>
+                    substitutionData[
+                        ingredient
+                    ]
+                )
+                .map(ingredient => `
+                    <button
+                        type="button"
+                        class="substitution-suggestion"
+                        data-ingredient="${escapeHtml(
+                            ingredient
+                        )}"
+                    >
+                        ${escapeHtml(
+                            formatIngredientName(
+                                ingredient
+                            )
+                        )}
+                    </button>
+                `)
+                .join('');
+
         container.innerHTML = `
-            <p>
-                No substitutions found for
+            <div class="substitution-welcome">
+                <p>
+                    Search for an ingredient or choose
+                    a common ingredient below.
+                </p>
+
+                <div class="substitution-suggestions">
+                    ${suggestionButtons}
+                </div>
+            </div>
+        `;
+    }
+
+
+    function renderSubstitutionCards(
+        ingredient
+    ) {
+        const container =
+            getResultsContainer();
+
+        if (!container) {
+            return;
+        }
+
+        const substitutions =
+            substitutionData[
+                ingredient
+            ] || [];
+
+        if (
+            !Array.isArray(substitutions) ||
+            substitutions.length === 0
+        ) {
+            container.innerHTML = `
+                <p>
+                    No substitutions found for
+                    <strong>
+                        ${escapeHtml(
+                            formatIngredientName(
+                                ingredient
+                            )
+                        )}
+                    </strong>.
+                </p>
+            `;
+
+            return;
+        }
+
+        const cards =
+            substitutions
+                .filter(substitution =>
+                    substitution &&
+                    typeof substitution ===
+                        'object'
+                )
+                .map(
+                    (
+                        substitution,
+                        index
+                    ) => {
+                        const substitute =
+                            substitution
+                                .substitute ||
+                            'Unnamed substitute';
+
+                        const ratio =
+                            substitution.ratio ||
+                            'Use as needed';
+
+                        const notes =
+                            substitution.notes ||
+                            'No additional notes.';
+
+                        return `
+                            <article
+                                class="substitution-card"
+                            >
+                                <div
+                                    class="substitution-number"
+                                    aria-hidden="true"
+                                >
+                                    ${index + 1}
+                                </div>
+
+                                <div
+                                    class="substitution-card-content"
+                                >
+                                    <h3>
+                                        ${escapeHtml(
+                                            substitute
+                                        )}
+                                    </h3>
+
+                                    <p
+                                        class="substitution-ratio"
+                                    >
+                                        <strong>
+                                            Use:
+                                        </strong>
+
+                                        ${escapeHtml(
+                                            ratio
+                                        )}
+                                    </p>
+
+                                    <p
+                                        class="substitution-notes"
+                                    >
+                                        ${escapeHtml(
+                                            notes
+                                        )}
+                                    </p>
+                                </div>
+                            </article>
+                        `;
+                    }
+                )
+                .join('');
+
+        container.innerHTML = `
+            <div class="substitution-heading">
+                <span>
+                    Substitutions for
+                </span>
+
                 <strong>
                     ${escapeHtml(
                         formatIngredientName(
                             ingredient
                         )
                     )}
+                </strong>
+            </div>
+
+            <div class="substitution-card-list">
+                ${cards}
+            </div>
+        `;
+    }
+
+
+    function renderMatchingIngredients(
+        matches
+    ) {
+        const container =
+            getResultsContainer();
+
+        if (!container) {
+            return;
+        }
+
+        const visibleMatches =
+            matches.slice(0, 10);
+
+        const buttons =
+            visibleMatches
+                .map(match => `
+                    <button
+                        type="button"
+                        class="substitution-suggestion"
+                        data-ingredient="${escapeHtml(
+                            match.ingredient
+                        )}"
+                    >
+                        ${escapeHtml(
+                            formatIngredientName(
+                                match.ingredient
+                            )
+                        )}
+                    </button>
+                `)
+                .join('');
+
+        container.innerHTML = `
+            <div class="substitution-match-panel">
+                <p>
+                    Select an ingredient:
+                </p>
+
+                <div class="substitution-suggestions">
+                    ${buttons}
+                </div>
+            </div>
+        `;
+    }
+
+
+    function renderNoMatches(
+        searchText
+    ) {
+        const container =
+            getResultsContainer();
+
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = `
+            <p>
+                No substitution entries matched
+                <strong>
+                    ${escapeHtml(searchText)}
                 </strong>.
             </p>
-        `;
 
-        return;
-    }
-
-    const cards =
-        substitutions
-            .map((substitution, index) => `
-                <article class="substitution-card">
-                    <div class="substitution-number">
-                        ${index + 1}
-                    </div>
-
-                    <div class="substitution-card-content">
-                        <h3>
-                            ${escapeHtml(
-                                substitution.substitute
-                            )}
-                        </h3>
-
-                        <p class="substitution-ratio">
-                            <strong>Use:</strong>
-                            ${escapeHtml(
-                                substitution.ratio
-                            )}
-                        </p>
-
-                        <p class="substitution-notes">
-                            ${escapeHtml(
-                                substitution.notes
-                            )}
-                        </p>
-                    </div>
-                </article>
-            `)
-            .join('');
-
-    container.innerHTML = `
-        <div class="substitution-heading">
-            <span>Substitutions for</span>
-
-            <strong>
-                ${escapeHtml(
-                    formatIngredientName(
-                        ingredient
-                    )
-                )}
-            </strong>
-        </div>
-
-        <div class="substitution-card-list">
-            ${cards}
-        </div>
-    `;
-}
-
-
-function renderMatchingIngredients(matches) {
-    const container =
-        document.getElementById('sub-results');
-
-    if (!container) {
-        return;
-    }
-
-    const visibleMatches =
-        matches.slice(0, 10);
-
-    const buttons =
-        visibleMatches
-            .map(match => `
-                <button
-                    type="button"
-                    class="substitution-suggestion"
-                    data-ingredient="${escapeHtml(
-                        match.ingredient
-                    )}"
-                >
-                    ${escapeHtml(
-                        formatIngredientName(
-                            match.ingredient
-                        )
-                    )}
-                </button>
-            `)
-            .join('');
-
-    container.innerHTML = `
-        <div class="substitution-match-panel">
-            <p>
-                Select an ingredient:
+            <p class="substitution-help">
+                Try a shorter search such as
+                <strong>cream</strong>,
+                <strong>flour</strong>,
+                <strong>vinegar</strong>,
+                or <strong>broth</strong>.
             </p>
-
-            <div class="substitution-suggestions">
-                ${buttons}
-            </div>
-        </div>
-    `;
-}
-
-
-function renderNoMatches(searchText) {
-    const container =
-        document.getElementById('sub-results');
-
-    if (!container) {
-        return;
+        `;
     }
 
-    container.innerHTML = `
-        <p>
-            No substitution entries matched
-            <strong>
-                ${escapeHtml(searchText)}
-            </strong>.
-        </p>
 
-        <p class="substitution-help">
-            Try a shorter search such as
-            <strong>cream</strong>,
-            <strong>flour</strong>,
-            <strong>vinegar</strong>,
-            or <strong>broth</strong>.
-        </p>
-    `;
-}
+    function renderSubstitutions() {
+        const searchInput =
+            getSearchInput();
 
-
-function renderSubstitutions() {
-    const searchInput =
-        document.getElementById('sub-search');
-
-    if (!searchInput) {
-        return;
-    }
-
-    const searchText =
-        searchInput.value.trim();
-
-    if (!searchText) {
-        renderSubstitutionWelcome();
-        return;
-    }
-
-    const resolvedSearch =
-        resolveAlias(searchText);
-
-    /*
-     * Direct ingredient or alias match.
-     */
-    if (substitutionData[resolvedSearch]) {
-        renderSubstitutionCards(
-            resolvedSearch
-        );
-
-        return;
-    }
-
-    const matches =
-        findMatchingIngredients(searchText);
-
-    if (matches.length === 0) {
-        renderNoMatches(searchText);
-        return;
-    }
-
-    /*
-     * Automatically show a single strong match.
-     * Otherwise, show touch-friendly choices.
-     */
-    if (
-        matches.length === 1 ||
-        matches[0].score >= 900
-    ) {
-        renderSubstitutionCards(
-            matches[0].ingredient
-        );
-
-        return;
-    }
-
-    renderMatchingIngredients(matches);
-}
-
-
-function selectSubstitutionIngredient(
-    ingredient
-) {
-    const searchInput =
-        document.getElementById('sub-search');
-
-    if (searchInput) {
-        searchInput.value =
-            formatIngredientName(ingredient);
-    }
-
-    renderSubstitutionCards(ingredient);
-}
-
-
-function initializeSubstitutionFinder() {
-    const searchInput =
-        document.getElementById('sub-search');
-
-    const resultsContainer =
-        document.getElementById('sub-results');
-
-    if (!searchInput || !resultsContainer) {
-        console.error(
-            'Substitution Finder elements were not found.'
-        );
-
-        return;
-    }
-
-    searchInput.addEventListener(
-        'input',
-        renderSubstitutions
-    );
-
-    searchInput.addEventListener(
-        'keydown',
-        event => {
-            if (event.key !== 'Enter') {
-                return;
-            }
-
-            event.preventDefault();
-
-            const matches =
-                findMatchingIngredients(
-                    searchInput.value
-                );
-
-            if (matches.length > 0) {
-                selectSubstitutionIngredient(
-                    matches[0].ingredient
-                );
-            }
+        if (!searchInput) {
+            return;
         }
-    );
 
-    /*
-     * Event delegation allows dynamically
-     * generated suggestion buttons to work.
-     */
-    resultsContainer.addEventListener(
-        'click',
-        event => {
-            const button =
-                event.target.closest(
-                    '.substitution-suggestion'
-                );
+        if (!substitutionsLoaded) {
+            renderLoadingState();
+            return;
+        }
 
-            if (!button) {
-                return;
-            }
+        const searchText =
+            searchInput.value.trim();
 
-            const ingredient =
-                button.dataset.ingredient;
+        if (!searchText) {
+            renderSubstitutionWelcome();
+            return;
+        }
 
-            if (
-                ingredient &&
-                substitutionData[ingredient]
-            ) {
-                selectSubstitutionIngredient(
+        const resolvedSearch =
+            resolveAlias(searchText);
+
+        /*
+         * Show an exact ingredient or recognized
+         * alias immediately.
+         */
+        if (
+            substitutionData[
+                resolvedSearch
+            ]
+        ) {
+            renderSubstitutionCards(
+                resolvedSearch
+            );
+
+            return;
+        }
+
+        const matches =
+            findMatchingIngredients(
+                searchText
+            );
+
+        if (matches.length === 0) {
+            renderNoMatches(
+                searchText
+            );
+
+            return;
+        }
+
+        /*
+         * Only auto-select an unambiguous exact or
+         * alias-quality match. Ambiguous partial
+         * searches continue showing choices.
+         */
+        if (
+            matches.length === 1 ||
+            matches[0].score >= 900
+        ) {
+            renderSubstitutionCards(
+                matches[0].ingredient
+            );
+
+            return;
+        }
+
+        renderMatchingIngredients(
+            matches
+        );
+    }
+
+
+    function selectSubstitutionIngredient(
+        ingredient
+    ) {
+        if (
+            !substitutionsLoaded ||
+            !substitutionData[
+                ingredient
+            ]
+        ) {
+            return;
+        }
+
+        const searchInput =
+            getSearchInput();
+
+        if (searchInput) {
+            searchInput.value =
+                formatIngredientName(
                     ingredient
                 );
-            }
         }
-    );
-}
+
+        renderSubstitutionCards(
+            ingredient
+        );
+    }
 
 
-window.kitchenApp =
-    window.kitchenApp || {};
+    function handleSearchKeydown(
+        event
+    ) {
+        if (event.key !== 'Enter') {
+            return;
+        }
 
-window.kitchenApp.substitutionFinder = {
-    findSubstitutions,
-    findMatchingIngredients,
-    renderSubstitutions,
-    selectSubstitutionIngredient
-};
+        event.preventDefault();
 
-/*
- * Keep compatibility with the original global.
- */
-window.substitutionFinder = {
-    findSubstitutions,
-    renderSubstitutions
-};
+        if (!substitutionsLoaded) {
+            return;
+        }
 
-initializeSubstitutionFinder();
-loadSubstitutions();
+        const searchInput =
+            getSearchInput();
+
+        if (!searchInput) {
+            return;
+        }
+
+        const resolvedSearch =
+            resolveAlias(
+                searchInput.value
+            );
+
+        /*
+         * Enter opens exact/alias matches.
+         */
+        if (
+            substitutionData[
+                resolvedSearch
+            ]
+        ) {
+            selectSubstitutionIngredient(
+                resolvedSearch
+            );
+
+            return;
+        }
+
+        const matches =
+            findMatchingIngredients(
+                searchInput.value
+            );
+
+        /*
+         * Enter only auto-selects a sole result.
+         * Ambiguous searches retain the visible
+         * suggestion list.
+         */
+        if (matches.length === 1) {
+            selectSubstitutionIngredient(
+                matches[0].ingredient
+            );
+        } else if (
+            matches.length > 1
+        ) {
+            renderMatchingIngredients(
+                matches
+            );
+        }
+    }
+
+
+    function handleResultsClick(
+        event
+    ) {
+        const button =
+            event.target.closest(
+                '.substitution-suggestion'
+            );
+
+        if (!button) {
+            return;
+        }
+
+        const ingredient =
+            button.dataset.ingredient;
+
+        if (
+            ingredient &&
+            substitutionData[
+                ingredient
+            ]
+        ) {
+            selectSubstitutionIngredient(
+                ingredient
+            );
+        }
+    }
+
+
+    function initializeSubstitutionFinder() {
+        const searchInput =
+            getSearchInput();
+
+        const resultsContainer =
+            getResultsContainer();
+
+        if (
+            !searchInput ||
+            !resultsContainer
+        ) {
+            console.error(
+                'Substitution Finder elements were not found.'
+            );
+
+            return;
+        }
+
+        searchInput.addEventListener(
+            'input',
+            renderSubstitutions
+        );
+
+        searchInput.addEventListener(
+            'keydown',
+            handleSearchKeydown
+        );
+
+        /*
+         * Event delegation supports suggestion
+         * buttons created after each search.
+         */
+        resultsContainer.addEventListener(
+            'click',
+            handleResultsClick
+        );
+
+        setSearchEnabled(false);
+        renderLoadingState();
+
+        loadSubstitutions();
+    }
+
+
+    window.kitchenApp =
+        window.kitchenApp || {};
+
+    window.kitchenApp.substitutionFinder = {
+        findSubstitutions,
+        findMatchingIngredients,
+        renderSubstitutions,
+        selectSubstitutionIngredient,
+        loadSubstitutions
+    };
+
+    /*
+     * Preserve compatibility with the upstream
+     * Kitchen Utility global name.
+     */
+    window.substitutionFinder = {
+        findSubstitutions,
+        renderSubstitutions
+    };
+
+    initializeSubstitutionFinder();
+})();
