@@ -151,6 +151,8 @@ document.getElementById('add-timer').addEventListener('click', () => {
 });
 
 // Expose for testing and HTML onclick handlers
+window.kitchenApp = window.kitchenApp || {};
+
 window.kitchenApp.timers = {
     addTimer,
     startTimer,

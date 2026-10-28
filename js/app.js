@@ -28,4 +28,5 @@ if (savedTab && document.getElementById(savedTab)) {
 }
 
 // Expose for other modules
-window.kitchenApp = { switchTab };
+window.kitchenApp = window.kitchenApp || {};
+window.kitchenApp.switchTab = switchTab;
